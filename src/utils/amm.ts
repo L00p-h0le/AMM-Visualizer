@@ -89,7 +89,7 @@ export const simulateSwap = (context: SwapContext): SwapResult => {
  * Placeholder for future interaction with Wagmi / Viem or Ethers.
  * Note: Follows global rules ensuring I/O is async/await.
  */
-export const fetchLivePoolReserves = async (poolAddress: string): Promise<PoolState> => {
+export const fetchLivePoolReserves = async (_poolAddress: string): Promise<PoolState> => {
   // Simulate network request delay
   return new Promise((resolve) => {
     setTimeout(() => {
