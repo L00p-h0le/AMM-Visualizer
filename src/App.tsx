@@ -40,93 +40,73 @@ export default function App() {
     resetPool();
   };
 
+  const [pendingPool, setPendingPool] = useState<PoolState | null>(null);
+
   const handleSwap = () => {
     if (isSwapping) return;
     setIsSwapping(true);
     setPreviousPool({ ...pool });
 
-    // Stage 1: Tokens fly from wallet to pool (2s)
+    let newX = pool.x;
+    let newY = pool.y;
+    let outAmount = 0;
+    const amountWithFee = swapAmount * (1 - FEE_PERCENT);
+
+    if (swapDirection === 'AtoB') {
+      const dx = swapAmount;
+      if (ammType === 'CPMM') {
+        const dy = pool.y - (pool.k / (pool.x + amountWithFee));
+        newX = pool.x + dx;
+        newY = pool.y - dy;
+        outAmount = dy;
+      } else if (ammType === 'CSMM') {
+        const dy = Math.min(pool.y, amountWithFee);
+        newX = pool.x + dx;
+        newY = pool.y - dy;
+        outAmount = dy;
+      } else {
+        const leverage = 0.1;
+        const dy = (amountWithFee * (1 + leverage)) / (1 + leverage);
+        newX = pool.x + dx;
+        newY = pool.y - dy;
+        outAmount = dy;
+      }
+    } else {
+      const dy = swapAmount;
+      if (ammType === 'CPMM') {
+        const dx = pool.x - (pool.k / (pool.y + amountWithFee));
+        newY = pool.y + dy;
+        newX = pool.x - dx;
+        outAmount = dx;
+      } else if (ammType === 'CSMM') {
+        const dx = Math.min(pool.x, amountWithFee);
+        newY = pool.y + dy;
+        newX = pool.x - dx;
+        outAmount = dx;
+      } else {
+        const leverage = 0.1;
+        const dx = (amountWithFee * (1 + leverage)) / (1 + leverage);
+        newY = pool.y + dy;
+        newX = pool.x - dx;
+        outAmount = dx;
+      }
+    }
+
+    const initialPrice = pool.y / pool.x;
+    const finalPrice = newY / newX;
+    const priceImpact = Math.abs((finalPrice - initialPrice) / initialPrice) * 100;
+
+    setLastSwapResult({
+      in: swapAmount,
+      out: outAmount,
+      priceImpact,
+      fee: swapAmount * FEE_PERCENT,
+    });
+
+    setPendingPool({ x: newX, y: newY, k: pool.k }); // K rebalances if needed, but keeping math separate
+    
+    // Stage 1: Tokens fly from wallet to pool
     setAnimationState('sending');
-
-    setTimeout(() => {
-      // Stage 2: Pool calculates output (1.5s)
-      setAnimationState('calculating');
-
-      // Compute the swap math during this stage
-      setPool(prev => {
-        let newX = prev.x;
-        let newY = prev.y;
-        let outAmount = 0;
-        const amountWithFee = swapAmount * (1 - FEE_PERCENT);
-
-        if (swapDirection === 'AtoB') {
-          const dx = swapAmount;
-          if (ammType === 'CPMM') {
-            const dy = prev.y - (prev.k / (prev.x + amountWithFee));
-            newX = prev.x + dx;
-            newY = prev.y - dy;
-            outAmount = dy;
-          } else if (ammType === 'CSMM') {
-            const dy = Math.min(prev.y, amountWithFee);
-            newX = prev.x + dx;
-            newY = prev.y - dy;
-            outAmount = dy;
-          } else {
-            const leverage = 0.1;
-            const dy = (amountWithFee * (1 + leverage)) / (1 + leverage);
-            newX = prev.x + dx;
-            newY = prev.y - dy;
-            outAmount = dy;
-          }
-        } else {
-          const dy = swapAmount;
-          if (ammType === 'CPMM') {
-            const dx = prev.x - (prev.k / (prev.y + amountWithFee));
-            newY = prev.y + dy;
-            newX = prev.x - dx;
-            outAmount = dx;
-          } else if (ammType === 'CSMM') {
-            const dx = Math.min(prev.x, amountWithFee);
-            newY = prev.y + dy;
-            newX = prev.x - dx;
-            outAmount = dx;
-          } else {
-            const leverage = 0.1;
-            const dx = (amountWithFee * (1 + leverage)) / (1 + leverage);
-            newY = prev.y + dy;
-            newX = prev.x - dx;
-            outAmount = dx;
-          }
-        }
-
-        const initialPrice = prev.y / prev.x;
-        const finalPrice = newY / newX;
-        const priceImpact = Math.abs((finalPrice - initialPrice) / initialPrice) * 100;
-
-        setLastSwapResult({
-          in: swapAmount,
-          out: outAmount,
-          priceImpact,
-          fee: swapAmount * FEE_PERCENT,
-        });
-        return { ...prev, x: newX, y: newY };
-      });
-
-      setTimeout(() => {
-        // Stage 3: Output tokens fly pool → wallet (2s)
-        setAnimationState('receiving');
-
-        setTimeout(() => {
-          // Stage 4: Pool rebalances (1.5s)
-          setAnimationState('balancing');
-
-          setTimeout(() => {
-            setIsSwapping(false);
-            setAnimationState('idle');
-          }, 1500);
-        }, 2000);
-      }, 1500);
-    }, 2000);
   };
 
   const handleAddLiquidity = (amountA: number, amountB: number) => {
@@ -197,6 +177,10 @@ export default function App() {
           tokenB={tokenB}
           lastSwapResult={lastSwapResult}
           ammType={ammType}
+          pendingPool={pendingPool}
+          setAnimationState={setAnimationState}
+          setPool={setPool}
+          setIsSwapping={setIsSwapping}
         />
       </section>
 

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence, useInView } from 'motion/react';
-import { Zap, ArrowRight, Coins, Calculator } from 'lucide-react';
+import { Zap, ArrowRight, Coins, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TokenIcon } from './TokenIcon';
 import { cn } from '../lib/utils';
 import type { AMMType, PoolState, Token } from '../types/amm';
@@ -15,11 +15,15 @@ interface ProcessSimulationProps {
   tokenB: Token;
   lastSwapResult: { in: number; out: number; priceImpact: number; fee: number } | null;
   ammType: AMMType;
+  pendingPool?: PoolState | null;
+  setAnimationState?: (s: 'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing') => void;
+  setPool?: (p: PoolState) => void;
+  setIsSwapping?: (b: boolean) => void;
 }
 
 /** Small token particles that trail behind the main token during sending */
 const TrailingParticles = ({ symbol, direction }: { symbol: string; direction: 'toPool' | 'toWallet' }) => {
-  const delays = [0.3, 0.6, 0.9];
+  const delays = [0.5, 1.0, 1.5]; // extended from 0.3, 0.6, 0.9
   const fromLeft = direction === 'toPool' ? '18%' : '72%';
   const toLeft = direction === 'toPool' ? '68%' : '22%';
 
@@ -30,7 +34,7 @@ const TrailingParticles = ({ symbol, direction }: { symbol: string; direction: '
           key={`particle-${direction}-${i}`}
           initial={{ left: fromLeft, top: '50%', opacity: 0, scale: 0.3 }}
           animate={{ left: toLeft, top: '50%', opacity: [0, 0.6, 0], scale: [0.3, 0.5, 0.2] }}
-          transition={{ duration: 1.4, delay, ease: 'easeInOut' }}
+          transition={{ duration: 2.5, delay, ease: 'easeInOut' }} // extended from 1.4
           className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
         >
           <TokenIcon symbol={symbol} className="w-5 h-5 opacity-60" />
@@ -49,7 +53,11 @@ export const ProcessSimulation = ({
   tokenA,
   tokenB,
   lastSwapResult,
-  ammType
+  ammType,
+  pendingPool,
+  setAnimationState,
+  setPool,
+  setIsSwapping
 }: ProcessSimulationProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(containerRef, { once: false, amount: 0.4 });
@@ -62,6 +70,27 @@ export const ProcessSimulation = ({
 
   const inputToken = swapDirection === 'AtoB' ? tokenA : tokenB;
   const outputToken = swapDirection === 'AtoB' ? tokenB : tokenA;
+
+  // Stepper logic
+  const sequence = ['idle', 'sending', 'calculating', 'receiving', 'balancing'] as const;
+  const currentIndex = sequence.indexOf(animationState);
+
+  const prevStep = () => {
+    if (currentIndex > 1 && setAnimationState) {
+      setAnimationState(sequence[currentIndex - 1]);
+    }
+  };
+
+  const nextStep = () => {
+    if (currentIndex > 0 && currentIndex < sequence.length - 1 && setAnimationState) {
+      setAnimationState(sequence[currentIndex + 1]);
+    } else if (currentIndex === sequence.length - 1 && setAnimationState && pendingPool && setPool && setIsSwapping) {
+      // Done - finalize the swap in the pool
+      setPool(pendingPool);
+      setIsSwapping(false);
+      setAnimationState('idle');
+    }
+  };
 
   return (
     <motion.div
@@ -79,8 +108,11 @@ export const ProcessSimulation = ({
         Real-time Process Simulation
       </h2>
 
-      {/* Main Animation Stage */}
-      <div className="relative h-72 bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-between px-12 border border-slate-100">
+      {/* Split Layout: 70% Animation, 30% Explanation */}
+      <div className="flex flex-col lg:flex-row gap-8 items-stretch">
+        
+        {/* LEFT: 70% Animation Stage */}
+        <div className="lg:w-[70%] relative h-72 bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-between px-4 md:px-12 border border-slate-100">
         
         {/* ── User Wallet ── */}
         <motion.div
@@ -127,7 +159,7 @@ export const ProcessSimulation = ({
                     scale: [0.4, 1, 1.1, 0.6],
                   }}
                   exit={{ opacity: 0, scale: 0 }}
-                  transition={{ duration: 2, ease: 'easeInOut' }}
+                  transition={{ duration: 4, ease: 'easeInOut' }}
                   className="absolute -translate-x-1/2 -translate-y-1/2 z-30"
                 >
                   <TokenIcon symbol={inputToken.symbol} className="shadow-xl w-12 h-12 ring-4 ring-white" />
@@ -141,7 +173,7 @@ export const ProcessSimulation = ({
                   className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 z-10"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: [0, 1, 0.5, 1, 0] }}
-                  transition={{ duration: 2, ease: 'easeInOut' }}
+                  transition={{ duration: 4, ease: 'easeInOut' }}
                 >
                   <ArrowRight size={28} className="text-indigo-400" strokeWidth={2} />
                 </motion.div>
@@ -155,9 +187,9 @@ export const ProcessSimulation = ({
               <motion.div
                 key="calc-badge"
                 initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: [1, 1.05, 1] }}
+                animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.8, repeat: 1, repeatType: 'reverse' }}
+                transition={{ duration: 0.5 }}
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30
                   bg-white px-5 py-3 rounded-xl shadow-lg border border-indigo-200 flex items-center gap-3"
               >
@@ -186,7 +218,7 @@ export const ProcessSimulation = ({
                     scale: [0.4, 1, 1.1, 0.6],
                   }}
                   exit={{ opacity: 0, scale: 0 }}
-                  transition={{ duration: 2, ease: 'easeInOut' }}
+                  transition={{ duration: 4, ease: 'easeInOut' }}
                   className="absolute -translate-x-1/2 -translate-y-1/2 z-30"
                 >
                   <TokenIcon symbol={outputToken.symbol} className="shadow-xl w-12 h-12 ring-4 ring-white" />
@@ -198,7 +230,7 @@ export const ProcessSimulation = ({
                   className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 z-10"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: [0, 1, 0.5, 1, 0] }}
-                  transition={{ duration: 2, ease: 'easeInOut' }}
+                  transition={{ duration: 4, ease: 'easeInOut' }}
                 >
                   <ArrowRight size={28} className="text-green-400 rotate-180" strokeWidth={2} />
                 </motion.div>
@@ -218,29 +250,27 @@ export const ProcessSimulation = ({
                     ? { scale: [1, 1.08, 0.96, 1], rotate: [0, 8, -8, 0] }
                     : {}
               }
-              transition={{ duration: animationState === 'sending' ? 2 : 1.5, ease: 'easeInOut' }}
+              transition={{ duration: animationState === 'sending' ? 4 : 3, ease: 'easeInOut' }}
               className={cn(
-                'w-full h-full rounded-full shadow-inner flex items-center justify-center relative overflow-hidden border-4 transition-colors duration-500',
-                animationState === 'sending' ? 'border-indigo-200 bg-indigo-100' : animationState === 'balancing' ? 'border-amber-200 bg-amber-50' : 'border-white bg-slate-200'
+                'w-full h-full rounded-full shadow-inner flex items-center justify-center relative overflow-hidden border-4 transition-colors duration-500 border-slate-200 bg-slate-200',
+                animationState === 'sending' ? 'shadow-indigo-200' : ''
               )}
             >
               {/* Token A Reserve Bar */}
               <motion.div
                 animate={{
                   height: `${(pool.x / (pool.x + pool.y)) * 100}%`,
-                  backgroundColor: pool.x >= pool.y ? '#6366f1' : '#06b6d4',
                 }}
                 transition={{ duration: 1.2, ease: 'easeInOut' }}
-                className="absolute bottom-0 left-0 w-1/2 opacity-80"
+                className={cn("absolute top-0 left-0 right-0 w-full opacity-90", tokenA.color)}
               />
               {/* Token B Reserve Bar */}
               <motion.div
                 animate={{
                   height: `${(pool.y / (pool.x + pool.y)) * 100}%`,
-                  backgroundColor: pool.y > pool.x ? '#6366f1' : '#06b6d4',
                 }}
                 transition={{ duration: 1.2, ease: 'easeInOut' }}
-                className="absolute bottom-0 right-0 w-1/2 opacity-80"
+                className={cn("absolute bottom-0 left-0 right-0 w-full opacity-90", tokenB.color)}
               />
 
               <div className="z-20 flex flex-col items-center text-white drop-shadow-md">
@@ -263,40 +293,87 @@ export const ProcessSimulation = ({
           </div>
           <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Liquidity Pool</div>
         </div>
-      </div>
+        </div>
 
-      {/* Step Indicator Cards */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-        {([
-          { key: 'sending', step: 1, label: 'Input', desc: `User sends ${swapAmount} ${inputToken.symbol} to the pool.` },
-          { key: 'calculating', step: 2, label: 'Calculate', desc: `Pool computes output using ${ammType} formula.` },
-          { key: 'receiving', step: 3, label: 'Output', desc: `Pool returns ${lastSwapResult?.out.toFixed(4) || '—'} ${outputToken.symbol} to user.` },
-          { key: 'balancing', step: 4, label: 'Rebalance', desc: `Reserves adjust to maintain the ${ammType} invariant.` },
-        ] as const).map(({ key, step, label, desc }) => {
-          const isActive = animationState === key;
-          const isPast = animationState !== 'idle' &&
-            ['sending', 'calculating', 'receiving', 'balancing'].indexOf(animationState) >
-            ['sending', 'calculating', 'receiving', 'balancing'].indexOf(key);
-
-          return (
-            <div
-              key={key}
-              className={cn(
-                'p-4 rounded-xl transition-all duration-300',
-                isActive ? 'bg-indigo-50 border border-indigo-200 shadow-sm' : isPast ? 'bg-green-50 border border-green-100' : 'bg-slate-50 border border-transparent'
+        {/* RIGHT: 30% Dynamic Explanation */}
+        <div className="lg:w-[30%] bg-indigo-50/50 border border-indigo-100 rounded-2xl p-6 flex flex-col justify-center relative overflow-hidden">
+          <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Current Process</div>
+          <div className="relative min-h-[140px]">
+            <AnimatePresence mode="wait">
+              {animationState === 'idle' && (
+                <motion.div key="idle" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="absolute inset-0 flex flex-col justify-center">
+                  <h3 className="text-lg font-bold text-slate-700 mb-2">Ready</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed">Enter a swap amount and click Swap to simulate the AMM execution path step-by-step.</p>
+                </motion.div>
               )}
-            >
-              <h3 className="text-sm font-bold flex items-center gap-2">
-                <div className={cn(
-                  'w-2 h-2 rounded-full transition-all',
-                  isActive ? 'bg-indigo-500 animate-ping' : isPast ? 'bg-green-500' : 'bg-slate-300'
-                )} />
-                {step}. {label}
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed mt-1">{desc}</p>
+              {animationState === 'sending' && (
+                <motion.div key="sending" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="absolute inset-0 flex flex-col justify-center">
+                  <h3 className="text-lg font-bold text-indigo-600 mb-2 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-ping" />
+                    1. Input
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">User overrides wallet and sends <strong className="text-slate-800">{swapAmount} {inputToken.symbol}</strong> to the liquidity pool smart contract.</p>
+                </motion.div>
+              )}
+              {animationState === 'calculating' && (
+                <motion.div key="calculating" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="absolute inset-0 flex flex-col justify-center">
+                  <h3 className="text-lg font-bold text-indigo-600 mb-2 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-ping" />
+                    2. Calculate
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">Pool computes the exact output required. The <strong className="text-slate-800">{ammType}</strong> invariant dictates the price curve shift.</p>
+                </motion.div>
+              )}
+              {animationState === 'receiving' && lastSwapResult && (
+                <motion.div key="receiving" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="absolute inset-0 flex flex-col justify-center">
+                  <h3 className="text-lg font-bold text-green-600 mb-2 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-ping" />
+                    3. Output
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">Pool returns <strong className="text-slate-800">{lastSwapResult.out.toFixed(4)} {outputToken.symbol}</strong> back to the user's wallet address.</p>
+                </motion.div>
+              )}
+              {animationState === 'balancing' && (
+                <motion.div key="balancing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="absolute inset-0 flex flex-col justify-center">
+                  <h3 className="text-lg font-bold text-amber-600 mb-2 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                    4. Rebalance
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">Reserves are permanently updated. The new invariant is stabilized at <strong className="text-slate-800 font-mono">k = {(pendingPool?.k || pool.k).toLocaleString()}</strong>.</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Stepper Controls */}
+          {animationState !== 'idle' && (
+            <div className="mt-8 flex items-center justify-between border-t border-indigo-200/50 pt-4 z-20">
+              <button 
+                onClick={prevStep}
+                disabled={currentIndex <= 1}
+                className="p-2 hover:bg-slate-200/50 rounded-lg text-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1 text-xs font-bold shrink-0"
+              >
+                <ChevronLeft size={16} /> Prev
+              </button>
+              
+              <div className="flex gap-1.5 flex-1 justify-center px-4">
+                {sequence.slice(1).map((s, i) => (
+                  <div key={s} className={cn(
+                    "flex-1 h-1.5 rounded-full transition-colors", 
+                    s === animationState ? "bg-indigo-500" : i < currentIndex ? "bg-indigo-300" : "bg-indigo-100"
+                  )} />
+                ))}
+              </div>
+
+              <button 
+                onClick={nextStep}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 shadow-md shadow-indigo-200 shrink-0"
+              >
+                {currentIndex === sequence.length - 1 ? 'Finish' : 'Next'} <ChevronRight size={16} />
+              </button>
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
     </motion.div>
   );
