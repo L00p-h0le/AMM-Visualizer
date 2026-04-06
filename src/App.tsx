@@ -1,296 +1,193 @@
 import { useState } from 'react';
 import './index.css';
-import { AmmChart } from './components/AmmChart';
-import { simulateSwap, type PoolState } from './utils/amm';
+import { Header } from './components/Header';
+import { PoolStats } from './components/PoolStats';
+import { SwapControls } from './components/SwapControls';
+import { PriceCurveChart } from './components/PriceCurveChart';
+import { ProcessSimulation } from './components/ProcessSimulation';
+import { EducationalSection } from './components/EducationalSection';
 
-function App() {
-  const [pool] = useState<PoolState>({
-    reserveX: 1240.50,
-    reserveY: 3101250
-  });
+import { TOKENS, type AMMType, type PoolState, type Token } from './types/amm';
 
-  const [inputAmount, setInputAmount] = useState<string>("5");
-  const [isXToY, setIsXToY] = useState<boolean>(true);
-  
-  // This state locks the simulation variables onto the chart & math explanations
-  // until the user presses "Execute Simulation"
-  const [chartAmount, setChartAmount] = useState<number>(0);
+export default function App() {
+  const [ammType, setAmmType] = useState<AMMType>('CPMM');
+  const [tokenA, setTokenA] = useState<Token>(TOKENS[0]);
+  const [tokenB, setTokenB] = useState<Token>(TOKENS[1]);
+  const [pool, setPool] = useState<PoolState>({ x: 100, y: 100, k: 10000 });
+  const [previousPool, setPreviousPool] = useState<PoolState | null>(null);
+  const [swapAmount, setSwapAmount] = useState<number>(10);
+  const [isSwapping, setIsSwapping] = useState(false);
+  const [swapDirection, setSwapDirection] = useState<'AtoB' | 'BtoA'>('AtoB');
+  const [lastSwapResult, setLastSwapResult] = useState<{ in: number, out: number, priceImpact: number, fee: number } | null>(null);
+  const [animationState, setAnimationState] = useState<'idle' | 'sending' | 'receiving' | 'balancing'>('idle');
 
-  // Mocks for user wallet balance 
-  const balanceX = 10000;
-  const balanceY = 25000000;
+  const FEE_PERCENT = 0.003; // 0.3% standard fee
+  const currentPrice = (pool.y / pool.x).toFixed(4);
 
-  const parsedAmount = parseFloat(inputAmount) || 0;
-  
-  // 1. Live Simulation: Used strictly for the "YOU GET (EST.)", Fee, and Price Impact UI so UX is responsive as you type.
-  const liveSimulation = simulateSwap({
-    pool,
-    amountIn: parsedAmount,
-    isTokenXToY: isXToY
-  });
-
-  // 2. Visualizer Simulation: The frozen snapshot that animates the chart and math descriptions upon click.
-  const visualSimulation = simulateSwap({
-    pool,
-    amountIn: chartAmount,
-    isTokenXToY: isXToY
-  });
-
-  const tokenIn = isXToY ? "ETH" : "USDC";
-  const tokenOut = isXToY ? "USDC" : "ETH";
-  const balanceIn = isXToY ? balanceX : balanceY;
-
-  const handleToggleSwap = () => {
-    setIsXToY(!isXToY);
-    setChartAmount(0); // clear chart on direction swap
+  const resetPool = () => {
+    setPool({ x: 100, y: 100, k: 10000 });
+    setLastSwapResult(null);
+    setPreviousPool(null);
   };
 
-  const handleExecuteSimulation = () => {
-    if (parsedAmount <= 0 || parsedAmount > balanceIn) return;
-    // Commits the current input amount to the visualizer graph!
-    setChartAmount(parsedAmount);
+  const handleSwap = () => {
+    if (isSwapping) return;
+    setIsSwapping(true);
+    setPreviousPool({ ...pool });
+    
+    // Start Animation Sequence
+    setAnimationState('sending');
+
+    setTimeout(() => {
+      setAnimationState('receiving');
+      
+      setPool(prev => {
+        let newX = prev.x;
+        let newY = prev.y;
+        let outAmount = 0;
+        const amountWithFee = swapAmount * (1 - FEE_PERCENT);
+
+        if (swapDirection === 'AtoB') {
+          const dx = swapAmount;
+          if (ammType === 'CPMM') {
+            const dy = prev.y - (prev.k / (prev.x + amountWithFee));
+            newX = prev.x + dx;
+            newY = prev.y - dy;
+            outAmount = dy;
+          } else if (ammType === 'CSMM') {
+            const dy = Math.min(prev.y, amountWithFee);
+            newX = prev.x + dx;
+            newY = prev.y - dy;
+            outAmount = dy;
+          } else {
+            const leverage = 0.1;
+            const dy = (amountWithFee * (1 + leverage)) / (1 + leverage);
+            newX = prev.x + dx;
+            newY = prev.y - dy;
+            outAmount = dy;
+          }
+        } else {
+          const dy = swapAmount;
+          if (ammType === 'CPMM') {
+            const dx = prev.x - (prev.k / (prev.y + amountWithFee));
+            newY = prev.y + dy;
+            newX = prev.x - dx;
+            outAmount = dx;
+          } else if (ammType === 'CSMM') {
+            const dx = Math.min(prev.x, amountWithFee);
+            newY = prev.y + dy;
+            newX = prev.x - dx;
+            outAmount = dx;
+          } else {
+            const leverage = 0.1;
+            const dx = (amountWithFee * (1 + leverage)) / (1 + leverage);
+            newY = prev.y + dy;
+            newX = prev.x - dx;
+            outAmount = dx;
+          }
+        }
+
+        const initialPrice = prev.y / prev.x;
+        const finalPrice = newY / newX;
+        const priceImpact = Math.abs((finalPrice - initialPrice) / initialPrice) * 100;
+
+        setLastSwapResult({ 
+          in: swapAmount, 
+          out: outAmount, 
+          priceImpact, 
+          fee: swapAmount * FEE_PERCENT 
+        });
+        return { ...prev, x: newX, y: newY };
+      });
+
+      setTimeout(() => {
+        setAnimationState('balancing');
+        setTimeout(() => {
+          setIsSwapping(false);
+          setAnimationState('idle');
+        }, 1000);
+      }, 1000);
+    }, 1000);
+  };
+
+  const handleAddLiquidity = (amountA: number, amountB: number) => {
+    setPreviousPool(null);
+    setPool(prev => {
+      const newX = prev.x + amountA;
+      const newY = prev.y + amountB;
+      let newK = prev.k;
+      if (ammType === 'CPMM') newK = newX * newY;
+      else if (ammType === 'CSMM') newK = newX + newY;
+      else newK = newX + newY; // Simplified
+      return { x: newX, y: newY, k: newK };
+    });
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto p-6 md:p-8 flex flex-col gap-8">
-      
+    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
-      <header className="flex justify-between items-start">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-[20px] tracking-widest text-[#00e0ff] uppercase font-bold">
-            Sovereign Intelligence
-          </h1>
-          <span className="text-[11px] text-slate-400 tracking-wider">
-            THE LEDGER V1.0.4-ALPHA
-          </span>
-        </div>
-        <div>
-          <div className="bg-[#1c2541] text-[#00e0ff] border border-white/10 px-4 py-2 rounded-md text-[13px] font-bold tracking-wider shadow-inner">
-            MODEL: UNISWAP V2
-          </div>
-        </div>
-      </header>
+      <Header ammType={ammType} setAmmType={setAmmType} resetPool={resetPool} />
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left Column */}
-        <div className="flex flex-col gap-6">
-          
-          {/* Main Chart Area */}
-          <div className="bg-[#151c31] border border-white/5 rounded-[12px] p-6 shadow-lg min-h-[480px] flex flex-col relative w-full overflow-hidden">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-[26px] font-semibold mb-1">Constant Product Curve</h2>
-                <div className="text-[15px] text-slate-400">Visualizing x * y = k (Uniswap V2 Core Model)</div>
-              </div>
-              <div className="flex items-center gap-2 border border-white/10 px-3 py-1.5 rounded text-[11px] font-semibold tracking-wider text-slate-300">
-                <span className="w-1.5 h-1.5 bg-[#00e0ff] rounded-full shadow-[0_0_8px_rgba(0,224,255,0.8)]"></span>
-                LIVE SYNC
-              </div>
-            </div>
+        {/* Left Column: Controls & Stats */}
+        <div className="lg:col-span-4 space-y-6">
+          <PoolStats 
+            pool={pool} 
+            tokenA={tokenA} 
+            tokenB={tokenB} 
+            setTokenA={setTokenA} 
+            setTokenB={setTokenB}
+            currentPrice={currentPrice}
+            resetPool={resetPool}
+          />
 
-            {/* Render the dynamically generated AMM mathematical curve! */}
-            <div className="flex-1 border-b border-l border-white/10 m-4 relative flex items-end ml-10 mb-[65px] min-h-[280px]">
-              <div className="absolute top-0 left-0 w-full h-full -translate-y-8">
-                <AmmChart
-                  reserveX={pool.reserveX}
-                  reserveY={pool.reserveY}
-                  deltaX={isXToY ? chartAmount : -visualSimulation.amountOut}
-                  deltaY={isXToY ? -visualSimulation.amountOut : chartAmount}
-                />
-              </div>
-            </div>
-
-            {/* Chart legends */}
-            <div className="flex flex-wrap gap-x-8 gap-y-3 text-[11px] font-bold tracking-widest uppercase mt-auto opacity-80">
-              <div className="flex items-center gap-2">
-                <span className="text-[#3b82f6] text-base">●</span> ORIGINAL STATE
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[#00e0ff] text-base">●</span> SIMULATED EXECUTION TARGET
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[#ef4444] text-base">■</span> PRICE IMPACT (LOST VALUE)
-              </div>
-            </div>
-          </div>
-
-          {/* Metrics Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-[#151c31] border border-white/5 rounded-[12px] p-5 shadow-sm">
-              <div className="text-[11px] text-slate-400 uppercase tracking-wider mb-2 font-semibold">RESERVE X (ETH)</div>
-              <div className="text-2xl font-bold font-mono text-white transition-all">
-                {visualSimulation.newReserveX.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-              </div>
-            </div>
-            <div className="bg-[#151c31] border border-white/5 rounded-[12px] p-5 shadow-sm">
-              <div className="text-[11px] text-slate-400 uppercase tracking-wider mb-2 font-semibold">RESERVE Y (USDC)</div>
-              <div className="text-2xl font-bold font-mono text-white transition-all">
-                {visualSimulation.newReserveY.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-              </div>
-            </div>
-            <div className="bg-[#151c31] border border-white/5 rounded-[12px] p-5 shadow-sm">
-              <div className="text-[11px] text-slate-400 uppercase tracking-wider mb-2 font-semibold">INVARIANT (K)</div>
-              <div className="text-2xl font-bold font-mono text-white">
-                {(visualSimulation.k / 1e9).toFixed(2)}B
-              </div>
-            </div>
-            <div className="bg-[#151c31] border border-white/5 rounded-[12px] p-5 shadow-sm flex flex-col">
-              <div className="text-[11px] text-slate-400 uppercase tracking-wider mb-2 font-semibold text-[#00e0ff]">CURRENT PRICE</div>
-              <div className="text-2xl font-bold font-mono flex items-baseline gap-1 text-white transition-all">
-                {(visualSimulation.newReserveY / visualSimulation.newReserveX).toLocaleString('en-US', { maximumFractionDigits: 2 })}
-                <span className="text-xs font-sans text-slate-400 font-medium">USDC/ETH</span>
-              </div>
-            </div>
-          </div>
-
+          <SwapControls
+            ammType={ammType}
+            pool={pool}
+            tokenA={tokenA}
+            tokenB={tokenB}
+            swapAmount={swapAmount}
+            setSwapAmount={setSwapAmount}
+            swapDirection={swapDirection}
+            setSwapDirection={setSwapDirection}
+            isSwapping={isSwapping}
+            lastSwapResult={lastSwapResult}
+            handleSwap={handleSwap}
+            handleAddLiquidity={handleAddLiquidity}
+          />
         </div>
 
-        {/* Right Column */}
-        <div className="flex flex-col gap-6">
-          
-          {/* Swap Box */}
-          <div className="bg-[#151c31] border border-white/5 rounded-[12px] p-6 shadow-xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold tracking-wide">Simulate Swap</h3>
-              <span className="w-6 h-6 rounded-full bg-white/5 text-slate-300 flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-white/10 transition-colors">i</span>
-            </div>
+        {/* Right Column: Visualization */}
+        <div className="lg:col-span-8 space-y-6">
+          <PriceCurveChart ammType={ammType} pool={pool} previousPool={previousPool} />
 
-            <div className="flex flex-col gap-2 relative">
-              
-              {/* You Pay */}
-              <div className="bg-[#0b1121] rounded-xl p-4 border border-transparent focus-within:border-[#00e0ff]/50 transition-colors">
-                <div className="flex justify-between text-[11px] text-slate-400 mb-3 font-semibold tracking-wider">
-                  <span>YOU PAY</span>
-                  <span>Bal: {balanceIn.toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <input
-                    type="text"
-                    value={inputAmount}
-                    onChange={(e) => {
-                       setInputAmount(e.target.value);
-                       setChartAmount(0); // clear chart to force new simulation execution
-                    }}
-                    className="bg-transparent text-3xl font-semibold font-mono outline-none w-full text-white"
-                  />
-                  <button className="bg-[#1c2541] flex items-center gap-2 border border-white/5 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-[#222c4a] transition-colors shrink-0 shadow-sm">
-                    {isXToY ? (
-                      <><span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">🌐</span> ETH</>
-                    ) : (
-                      <><span className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] text-white">S</span> USDC</>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Swap Button Wrapper */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex">
-                <button
-                  onClick={handleToggleSwap}
-                  className="bg-[#1c2541] border-[4px] border-[#151c31] w-11 h-11 rounded-[12px] flex items-center justify-center hover:bg-[#222c4a] hover:text-[#00e0ff] transition-colors text-slate-400 cursor-pointer"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16" /></svg>
-                </button>
-              </div>
-
-              {/* You Get */}
-              <div className="bg-[#0b1121] rounded-xl p-4 border border-transparent focus-within:border-[#00e0ff]/50 transition-colors">
-                <div className="flex justify-between text-[11px] text-slate-400 mb-3 font-semibold tracking-wider">
-                  <span>YOU GET (EST.)</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <input
-                    type="text"
-                    value={liveSimulation.amountOut.toLocaleString('en-US', { maximumFractionDigits: 5 })}
-                    readOnly
-                    className="bg-transparent text-3xl font-semibold font-mono outline-none text-slate-300 w-full"
-                  />
-                  <button className="bg-[#1c2541] flex items-center gap-2 border border-white/5 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-[#222c4a] transition-colors shrink-0 shadow-sm">
-                    {isXToY ? (
-                      <><span className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-[10px] text-white">S</span> USDC</>
-                    ) : (
-                      <><span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">🌐</span> ETH</>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Metrics */}
-            <div className="flex flex-col gap-3 py-6 px-1 text-[13px] font-medium border-t border-white/5 mt-6">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400">Slippage Tolerance</span>
-                <span className="text-white font-semibold">0.5%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400">Price Impact</span>
-                <span className="text-[#ff4d4f] font-semibold">
-                  {(liveSimulation.priceImpact * 100).toFixed(3)}%
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400">Liquidity Provider Fee</span>
-                <span className="text-[#60A5FA] font-semibold">
-                  {liveSimulation.feeAmount.toFixed(5)} {tokenIn}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleExecuteSimulation}
-              disabled={parsedAmount <= 0 || parsedAmount > balanceIn}
-              className="w-full bg-[#00e0ff] disabled:opacity-50 hover:bg-[#33e6ff] text-black font-bold text-[14px] tracking-wide py-4 rounded-lg transition-all shadow-[0_0_15px_rgba(0,224,255,0.25)] hover:shadow-[0_0_20px_rgba(0,224,255,0.4)] uppercase"
-            >
-              {parsedAmount > balanceIn ? "Insufficient Balance" : "Execute Simulation"}
-            </button>
-          </div>
-
-          {/* Math Card */}
-          <div className="bg-[#151c31] border border-white/5 rounded-[12px] p-6 shadow-lg">
-            <h3 className="font-semibold flex items-center gap-2 mb-5 text-[15px] tracking-wide">
-              <span className="text-[#00e0ff] text-lg">✨</span> The Math Behind This Swap
-            </h3>
-
-            <div className="bg-[#0b1121] p-4 rounded-lg border-l-2 border-[#00e0ff] mb-6 shadow-inner">
-              <p className="italic text-slate-400 text-[13px] mb-3 leading-relaxed">
-                In a constant product market maker, the product of reserves must remain constant during the swap.
-              </p>
-              <div className="text-center font-mono text-[#00e0ff] text-[13px] bg-white/5 py-2 rounded">
-                (x + dx * 0.997) * (y - dy) = k
-              </div>
-            </div>
-
-            {chartAmount > 0 ? (
-              <ol className="list-decimal pl-5 text-[13px] text-slate-300 space-y-3 marker:text-slate-600 marker:font-mono font-medium leading-[1.6]">
-                <li>
-                  Your input is <strong className="text-white font-mono bg-white/5 px-1 py-0.5 rounded">{chartAmount} {tokenIn}</strong>. 
-                  First, a 0.3% liquidity provider fee (<strong className="text-red-400 font-mono bg-white/5 px-1 py-0.5 rounded">{visualSimulation.feeAmount.toFixed(5)} {tokenIn}</strong>) is deducted, leaving <strong className="text-white font-mono bg-white/5 px-1 py-0.5 rounded">{(chartAmount - visualSimulation.feeAmount).toFixed(5)} {tokenIn}</strong> for the active trade.
-                </li>
-                <li>
-                  The pool adds your input to its reserves. To keep the invariant <strong className="text-[#00e0ff] font-mono bg-[#00e0ff]/10 px-1 py-0.5 rounded">k = {(visualSimulation.k / 1e9).toFixed(2)}B</strong> constant, 
-                  the {tokenOut} reserve drops from <strong className="text-slate-400 line-through">{(isXToY ? pool.reserveY : pool.reserveX).toFixed(2)}</strong> down to <strong className="text-white font-mono bg-white/5 px-1 py-0.5 rounded">{(isXToY ? visualSimulation.newReserveY : visualSimulation.newReserveX).toFixed(2)}</strong>.
-                </li>
-                <li>
-                  This difference is the exact amount you receive: <strong className="text-[#00e0ff] font-mono bg-[#00e0ff]/10 px-1 py-0.5 rounded">{visualSimulation.amountOut.toFixed(5)} {tokenOut}</strong>. 
-                  Because your trade shifts the ratio of the pool, you incur a Price Impact of <strong className="text-[#ff4d4f] font-mono bg-white/5 px-1 py-0.5 rounded">{(visualSimulation.priceImpact * 100).toFixed(3)}%</strong> compared to the current spot price.
-                </li>
-              </ol>
-            ) : (
-              <div className="text-center text-slate-400 text-sm py-4 italic">
-                Set an amount and click "Execute Simulation" to view the mathematical breakdown.
-              </div>
-            )}
-            
-          </div>
-
+          <ProcessSimulation 
+            pool={pool}
+            isSwapping={isSwapping}
+            animationState={animationState}
+            swapDirection={swapDirection}
+            swapAmount={swapAmount}
+            tokenA={tokenA}
+            tokenB={tokenB}
+            lastSwapResult={lastSwapResult}
+            ammType={ammType}
+          />
         </div>
 
       </div>
+
+      <EducationalSection 
+        ammType={ammType}
+        lastSwapResult={lastSwapResult}
+        swapDirection={swapDirection}
+        tokenA={tokenA}
+        tokenB={tokenB}
+      />
+      
+      <footer className="text-center py-8 text-slate-400 text-sm">
+        AMM Explorer &bull; Built for educational purposes &bull; 2026
+      </footer>
     </div>
   );
 }
-
-export default App;

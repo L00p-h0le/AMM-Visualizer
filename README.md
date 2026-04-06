@@ -1,25 +1,24 @@
 # AMM Visualizer
 
-A premium, educational AMM simulator for exploring how automated market makers behave under different swap scenarios. The current frontend focuses on a polished constant-product experience with a dark dashboard layout, live swap metrics, and an explanation panel that breaks down the math behind each trade.
+A frontend-only AMM education app that turns swap mechanics into a guided visual simulation. The experience is designed around animation, step-by-step progression, and live state changes so users can understand what happens inside an automated market maker instead of only seeing a final quote.
 
-## Overview
+## What the app does
 
-The app is designed to help users understand:
+- Simulates swaps against constant-product style AMM pools
+- Animates the reserve curve and execution point through the full swap flow
+- Shows live reserve, fee, slippage, and price impact changes
+- Explains each step of the trade in plain language
+- Provides a foundation for later Curve and constant-sum model support
 
-- How AMM curves change as trades move through the pool
-- How reserves, invariant values, fees, and price impact are calculated
-- How slippage grows as trade size increases
-- How a swap can be explained step by step in plain language
+## Current UX direction
 
-## Current frontend features
+The current frontend is built as a premium dark dashboard with:
 
-- Interactive dashboard-style layout with a dedicated chart area
-- AMM model selector for switching between curve models
-- Swap simulator with token input, output preview, fee summary, and price impact
-- Live pool state cards for reserves, invariant, and current price
-- Explanation card showing the math behind the swap
-- Secondary insight panel for advanced slippage testing
-- Dark, modern UI with Tailwind CSS styling
+- A large primary curve visualization
+- A swap control panel with live quote feedback
+- Metrics for reserves, invariant, and current price
+- A math/explanation panel that narrates the swap
+- A secondary educational section for deeper learning
 
 ## Tech stack
 
@@ -27,8 +26,27 @@ The app is designed to help users understand:
 - TypeScript
 - Vite
 - Tailwind CSS v4
+- Recharts for curve visualization
+- Framer Motion for motion/animation support
 
-## Getting started
+## Project structure
+
+```text
+Frontend/
+├─ public/
+├─ src/
+│  ├─ components/
+│  ├─ utils/
+│  ├─ App.tsx
+│  ├─ App.css
+│  ├─ index.css
+│  └─ main.tsx
+├─ IMPLEMENTATION_TASK_CHECKLIST.md
+├─ package.json
+└─ vite.config.ts
+```
+
+## Run locally
 
 Install dependencies:
 
@@ -36,13 +54,13 @@ Install dependencies:
 npm install
 ```
 
-Run the development server:
+Start the dev server:
 
 ```bash
 npm run dev
 ```
 
-Build for production:
+Create a production build:
 
 ```bash
 npm run build
@@ -60,24 +78,9 @@ Preview the production build:
 npm run preview
 ```
 
-## Project structure
+## Development notes
 
-```text
-Frontend/
-├─ public/
-├─ src/
-│  ├─ assets/
-│  ├─ App.tsx
-│  ├─ App.css
-│  ├─ index.css
-│  └─ main.tsx
-├─ IMPLEMENTATION_TASK_CHECKLIST.md
-├─ package.json
-└─ vite.config.ts
-```
-
-## Notes
-
-- The repo is intentionally scoped to the frontend application only.
-- The current UI is a strong MVP foundation and can be extended later with deeper simulation logic, model adapters, and richer analytics.
-- The existing checklist in `IMPLEMENTATION_TASK_CHECKLIST.md` captures the recommended build order for future work.
+- The repo is intentionally scoped to the frontend app only.
+- All AMM math should stay in utility functions so it can be reused by multiple visual states and models.
+- The animation flow is meant to show the complete swap lifecycle: input, execution, reserve shift, output, and final explanation.
+- The implementation checklist in `IMPLEMENTATION_TASK_CHECKLIST.md` is the recommended roadmap for future work.
