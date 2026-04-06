@@ -16,9 +16,11 @@ export default function App() {
   const [pool, setPool] = useState<PoolState>({ x: 100, y: 100, k: 10000 });
   const [previousPool, setPreviousPool] = useState<PoolState | null>(null);
   const [swapAmount, setSwapAmount] = useState<number>(10);
-  const [isSwapping, setIsSwapping] = useState(false);
+  const [isSwapping, setIsSwapping] = useState(false); // Used for SwapControls visual state
+  const [isSimulating, setIsSimulating] = useState(false); // Used for ProcessSimulation lock
   const [swapDirection, setSwapDirection] = useState<'AtoB' | 'BtoA'>('AtoB');
   const [lastSwapResult, setLastSwapResult] = useState<{ in: number, out: number, priceImpact: number, fee: number } | null>(null);
+  const [simulationResult, setSimulationResult] = useState<{ in: number, out: number } | null>(null);
   const [animationState, setAnimationState] = useState<'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing'>('idle');
 
   const FEE_PERCENT = 0.003; // 0.3% standard fee
@@ -42,11 +44,7 @@ export default function App() {
 
   const [pendingPool, setPendingPool] = useState<PoolState | null>(null);
 
-  const handleSwap = () => {
-    if (isSwapping) return;
-    setIsSwapping(true);
-    setPreviousPool({ ...pool });
-
+  const calculateSwap = () => {
     let newX = pool.x;
     let newY = pool.y;
     let outAmount = 0;
@@ -96,14 +94,39 @@ export default function App() {
     const finalPrice = newY / newX;
     const priceImpact = Math.abs((finalPrice - initialPrice) / initialPrice) * 100;
 
+    return { newX, newY, outAmount, priceImpact };
+  };
+
+  const handleSwap = () => {
+    if (swapAmount <= 0) return;
+    setIsSwapping(true);
+    setPreviousPool({ ...pool });
+
+    const { newX, newY, outAmount, priceImpact } = calculateSwap();
+
     setLastSwapResult({
       in: swapAmount,
       out: outAmount,
       priceImpact,
       fee: swapAmount * FEE_PERCENT,
     });
+    setPool({ x: newX, y: newY, k: pool.k });
+    
+    // reset button after 1s
+    setTimeout(() => setIsSwapping(false), 1000);
+  };
 
-    setPendingPool({ x: newX, y: newY, k: pool.k }); // K rebalances if needed, but keeping math separate
+  const handleSimulate = () => {
+    if (isSimulating || swapAmount <= 0) return;
+    setIsSimulating(true);
+
+    const { newX, newY, outAmount } = calculateSwap();
+
+    setSimulationResult({
+      in: swapAmount,
+      out: outAmount
+    });
+    setPendingPool({ x: newX, y: newY, k: pool.k });
     
     // Stage 1: Tokens fly from wallet to pool
     setAnimationState('sending');
@@ -161,7 +184,7 @@ export default function App() {
 
         {/* Right Column: Price Curve Visualization */}
         <div className="lg:col-span-8">
-          <PriceCurveChart ammType={ammType} pool={pool} previousPool={previousPool} />
+          <PriceCurveChart ammType={ammType} pool={isSimulating && pendingPool ? pendingPool : pool} previousPool={previousPool} />
         </div>
       </section>
 
@@ -169,18 +192,19 @@ export default function App() {
       <section>
         <ProcessSimulation
           pool={pool}
-          isSwapping={isSwapping}
+          isSimulating={isSimulating}
           animationState={animationState}
           swapDirection={swapDirection}
           swapAmount={swapAmount}
           tokenA={tokenA}
           tokenB={tokenB}
-          lastSwapResult={lastSwapResult}
+          simulationResult={simulationResult}
           ammType={ammType}
           pendingPool={pendingPool}
           setAnimationState={setAnimationState}
           setPool={setPool}
-          setIsSwapping={setIsSwapping}
+          setIsSimulating={setIsSimulating}
+          handleSimulate={handleSimulate}
         />
       </section>
 
