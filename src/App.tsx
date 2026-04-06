@@ -19,7 +19,7 @@ export default function App() {
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapDirection, setSwapDirection] = useState<'AtoB' | 'BtoA'>('AtoB');
   const [lastSwapResult, setLastSwapResult] = useState<{ in: number, out: number, priceImpact: number, fee: number } | null>(null);
-  const [animationState, setAnimationState] = useState<'idle' | 'sending' | 'receiving' | 'balancing'>('idle');
+  const [animationState, setAnimationState] = useState<'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing'>('idle');
 
   const FEE_PERCENT = 0.003; // 0.3% standard fee
   const currentPrice = (pool.y / pool.x).toFixed(4);
@@ -30,17 +30,29 @@ export default function App() {
     setPreviousPool(null);
   };
 
+  const handleSetTokenA = (t: Token) => {
+    setTokenA(t);
+    resetPool();
+  };
+
+  const handleSetTokenB = (t: Token) => {
+    setTokenB(t);
+    resetPool();
+  };
+
   const handleSwap = () => {
     if (isSwapping) return;
     setIsSwapping(true);
     setPreviousPool({ ...pool });
-    
-    // Start Animation Sequence
+
+    // Stage 1: Tokens fly from wallet to pool (2s)
     setAnimationState('sending');
 
     setTimeout(() => {
-      setAnimationState('receiving');
-      
+      // Stage 2: Pool calculates output (1.5s)
+      setAnimationState('calculating');
+
+      // Compute the swap math during this stage
       setPool(prev => {
         let newX = prev.x;
         let newY = prev.y;
@@ -91,23 +103,30 @@ export default function App() {
         const finalPrice = newY / newX;
         const priceImpact = Math.abs((finalPrice - initialPrice) / initialPrice) * 100;
 
-        setLastSwapResult({ 
-          in: swapAmount, 
-          out: outAmount, 
-          priceImpact, 
-          fee: swapAmount * FEE_PERCENT 
+        setLastSwapResult({
+          in: swapAmount,
+          out: outAmount,
+          priceImpact,
+          fee: swapAmount * FEE_PERCENT,
         });
         return { ...prev, x: newX, y: newY };
       });
 
       setTimeout(() => {
-        setAnimationState('balancing');
+        // Stage 3: Output tokens fly pool → wallet (2s)
+        setAnimationState('receiving');
+
         setTimeout(() => {
-          setIsSwapping(false);
-          setAnimationState('idle');
-        }, 1000);
-      }, 1000);
-    }, 1000);
+          // Stage 4: Pool rebalances (1.5s)
+          setAnimationState('balancing');
+
+          setTimeout(() => {
+            setIsSwapping(false);
+            setAnimationState('idle');
+          }, 1500);
+        }, 2000);
+      }, 1500);
+    }, 2000);
   };
 
   const handleAddLiquidity = (amountA: number, amountB: number) => {
@@ -124,20 +143,22 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-12">
       {/* Header */}
       <Header ammType={ammType} setAmmType={setAmmType} resetPool={resetPool} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Column: Controls & Stats */}
-        <div className="lg:col-span-4 space-y-6">
-          <PoolStats 
-            pool={pool} 
-            tokenA={tokenA} 
-            tokenB={tokenB} 
-            setTokenA={setTokenA} 
-            setTokenB={setTokenB}
+      {/* ── Hero Section ── */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        {/* Left Column: Pool Reserves + Swap (stacked, height matches chart) */}
+        <div className="lg:col-span-4 flex flex-col gap-6 min-h-0">
+          <PoolStats
+            pool={pool}
+            ammType={ammType}
+            tokenA={tokenA}
+            tokenB={tokenB}
+            setTokenA={handleSetTokenA}
+            setTokenB={handleSetTokenB}
+            setPool={setPool}
             currentPrice={currentPrice}
             resetPool={resetPool}
           />
@@ -158,33 +179,38 @@ export default function App() {
           />
         </div>
 
-        {/* Right Column: Visualization */}
-        <div className="lg:col-span-8 space-y-6">
+        {/* Right Column: Price Curve Visualization */}
+        <div className="lg:col-span-8">
           <PriceCurveChart ammType={ammType} pool={pool} previousPool={previousPool} />
-
-          <ProcessSimulation 
-            pool={pool}
-            isSwapping={isSwapping}
-            animationState={animationState}
-            swapDirection={swapDirection}
-            swapAmount={swapAmount}
-            tokenA={tokenA}
-            tokenB={tokenB}
-            lastSwapResult={lastSwapResult}
-            ammType={ammType}
-          />
         </div>
+      </section>
 
-      </div>
+      {/* ── Real-time Process Simulation ── */}
+      <section>
+        <ProcessSimulation
+          pool={pool}
+          isSwapping={isSwapping}
+          animationState={animationState}
+          swapDirection={swapDirection}
+          swapAmount={swapAmount}
+          tokenA={tokenA}
+          tokenB={tokenB}
+          lastSwapResult={lastSwapResult}
+          ammType={ammType}
+        />
+      </section>
 
-      <EducationalSection 
-        ammType={ammType}
-        lastSwapResult={lastSwapResult}
-        swapDirection={swapDirection}
-        tokenA={tokenA}
-        tokenB={tokenB}
-      />
-      
+      {/* ── How It Works ── */}
+      <section>
+        <EducationalSection
+          ammType={ammType}
+          lastSwapResult={lastSwapResult}
+          swapDirection={swapDirection}
+          tokenA={tokenA}
+          tokenB={tokenB}
+        />
+      </section>
+
       <footer className="text-center py-8 text-slate-400 text-sm">
         AMM Explorer &bull; Built for educational purposes &bull; 2026
       </footer>
