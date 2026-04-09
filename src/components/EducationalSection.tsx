@@ -1,11 +1,11 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { AMM_MODELS, type AMMType, type Token } from '../types/amm';
+import { AMM_MODELS, type AMMType, type Token, type SwapResult } from '../types/amm';
 
 interface EducationalSectionProps {
   ammType: AMMType;
-  lastSwapResult: any;
+  lastSwapResult: SwapResult | null;
   swapDirection: 'AtoB' | 'BtoA';
   tokenA: Token;
   tokenB: Token;
@@ -27,7 +27,7 @@ export const EducationalSection = ({ ammType, lastSwapResult, swapDirection, tok
 
       <AnimatePresence>
         {lastSwapResult && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-800/50 p-6 rounded-2xl border border-slate-700"
@@ -35,7 +35,7 @@ export const EducationalSection = ({ ammType, lastSwapResult, swapDirection, tok
             <div className="space-y-1">
               <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">Swap Detail</div>
               <div className="text-xl font-bold text-indigo-400 flex items-center">
-                {lastSwapResult.in} {swapDirection === 'AtoB' ? tokenA.symbol : tokenB.symbol} 
+                {lastSwapResult.in} {swapDirection === 'AtoB' ? tokenA.symbol : tokenB.symbol}
                 <ArrowRight size={16} className="inline mx-2" />
                 {lastSwapResult.out.toFixed(4)} {swapDirection === 'AtoB' ? tokenB.symbol : tokenA.symbol}
               </div>
@@ -48,7 +48,7 @@ export const EducationalSection = ({ ammType, lastSwapResult, swapDirection, tok
               <p className="text-[10px] text-slate-500">How much the price shifted due to your trade size.</p>
             </div>
             <div className="space-y-1">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">Lp Fee (0.3%)</div>
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">LP Fee (0.3%)</div>
               <div className="text-xl font-bold text-amber-400">
                 {lastSwapResult.fee.toFixed(4)} {swapDirection === 'AtoB' ? tokenA.symbol : tokenB.symbol}
               </div>

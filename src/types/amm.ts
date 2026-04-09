@@ -3,13 +3,20 @@ export type AMMType = 'CPMM' | 'CSMM' | 'StableSwap';
 export interface PoolState {
   x: number; // Token A reserve
   y: number; // Token B reserve
-  k: number; // Constant
+  k: number; // Invariant constant
 }
 
 export interface Token {
   symbol: string;
   name: string;
   color: string;
+}
+
+export interface SwapResult {
+  in: number;
+  out: number;
+  priceImpact: number;
+  fee: number;
 }
 
 export const TOKENS: Token[] = [

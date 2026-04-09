@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRightLeft, Plus, RefreshCw, Zap, Info } from 'lucide-react';
 import { TokenIcon } from './TokenIcon';
+import { Tilt } from './motion-primitives/tilt';
 import { cn } from '../lib/utils';
-import type { AMMType, PoolState, Token } from '../types/amm';
+import type { AMMType, PoolState, Token, SwapResult } from '../types/amm';
+import { estimateOutput } from '../lib/amm';
 
 interface SwapControlsProps {
   ammType: AMMType;
@@ -15,12 +17,10 @@ interface SwapControlsProps {
   swapDirection: 'AtoB' | 'BtoA';
   setSwapDirection: React.Dispatch<React.SetStateAction<'AtoB' | 'BtoA'>>;
   isSwapping: boolean;
-  lastSwapResult: any;
+  lastSwapResult: SwapResult | null;
   handleSwap: () => void;
   handleAddLiquidity: (aA: number, aB: number) => void;
 }
-
-import { Tilt } from './motion-primitives/tilt';
 
 export const SwapControls = ({
   ammType,
@@ -34,7 +34,7 @@ export const SwapControls = ({
   isSwapping,
   lastSwapResult,
   handleSwap,
-  handleAddLiquidity
+  handleAddLiquidity,
 }: SwapControlsProps) => {
   const [activeTab, setActiveTab] = useState<'swap' | 'liquidity'>('swap');
 
@@ -42,7 +42,7 @@ export const SwapControls = ({
     <Tilt rotationFactor={4} isRevese className="h-full w-full">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full">
         <div className="flex border-b border-slate-100">
-          <button 
+          <button
             onClick={() => setActiveTab('swap')}
             className={cn(
               "flex-1 py-4 text-sm font-bold transition-all",
@@ -51,7 +51,7 @@ export const SwapControls = ({
           >
             Swap
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('liquidity')}
             className={cn(
               "flex-1 py-4 text-sm font-bold transition-all",
@@ -74,22 +74,19 @@ export const SwapControls = ({
                 <div className="relative">
                   <label className="text-xs font-medium text-slate-400 uppercase mb-1 block">You Pay</label>
                   <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 focus-within:border-indigo-300 transition-all">
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       value={swapAmount}
                       onChange={(e) => setSwapAmount(Number(e.target.value))}
                       className="bg-transparent text-xl font-bold w-full outline-none"
                     />
                     <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
-                      <TokenIcon 
-                        symbol={swapDirection === 'AtoB' ? tokenA.symbol : tokenB.symbol} 
-                        className="w-5 h-5" 
-                      />
+                      <TokenIcon symbol={swapDirection === 'AtoB' ? tokenA.symbol : tokenB.symbol} className="w-5 h-5" />
                       <span className="font-bold text-sm">{swapDirection === 'AtoB' ? tokenA.symbol : tokenB.symbol}</span>
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     onClick={() => setSwapDirection(prev => prev === 'AtoB' ? 'BtoA' : 'AtoB')}
                     className="absolute left-1/2 -bottom-6 -translate-x-1/2 z-10 bg-white p-2 rounded-full border border-slate-200 shadow-md hover:scale-110 transition-transform text-indigo-600"
                   >
@@ -101,24 +98,18 @@ export const SwapControls = ({
                   <label className="text-xs font-medium text-slate-400 uppercase mb-1 block">You Receive (Est.)</label>
                   <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200 opacity-80">
                     <span className="text-xl font-bold text-slate-400">
-                      {ammType === 'CPMM' 
-                        ? (swapDirection === 'AtoB' 
-                            ? (pool.y - (pool.k / (pool.x + swapAmount))).toFixed(4)
-                            : (pool.x - (pool.k / (pool.y + swapAmount))).toFixed(4))
-                        : (Math.min(swapDirection === 'AtoB' ? pool.y : pool.x, swapAmount).toFixed(4)) // Simplified
-                      }
+                      {swapAmount > 0
+                        ? estimateOutput(pool, ammType, swapAmount, swapDirection).toFixed(4)
+                        : '0.0000'}
                     </span>
                     <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
-                      <TokenIcon 
-                        symbol={swapDirection === 'AtoB' ? tokenB.symbol : tokenA.symbol} 
-                        className="w-5 h-5" 
-                      />
+                      <TokenIcon symbol={swapDirection === 'AtoB' ? tokenB.symbol : tokenA.symbol} className="w-5 h-5" />
                       <span className="font-bold text-sm">{swapDirection === 'AtoB' ? tokenB.symbol : tokenA.symbol}</span>
                     </div>
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={handleSwap}
                   disabled={isSwapping || swapAmount <= 0}
                   className={cn(
@@ -139,12 +130,12 @@ export const SwapControls = ({
               <p className="text-xs text-slate-500">
                 Adding liquidity increases the constant 'k', shifting the curve outward and reducing slippage.
               </p>
-              
+
               <div className="space-y-4">
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Add 10% Liquidity</span>
-                    <button 
+                    <button
                       onClick={() => handleAddLiquidity(pool.x * 0.1, pool.y * 0.1)}
                       className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all"
                     >
@@ -153,7 +144,7 @@ export const SwapControls = ({
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Add 50% Liquidity</span>
-                    <button 
+                    <button
                       onClick={() => handleAddLiquidity(pool.x * 0.5, pool.y * 0.5)}
                       className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all"
                     >
@@ -172,7 +163,7 @@ export const SwapControls = ({
 
           <AnimatePresence>
             {lastSwapResult && activeTab === 'swap' && !isSwapping && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}

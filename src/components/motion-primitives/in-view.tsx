@@ -1,4 +1,3 @@
-'use client';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { motion, useInView } from 'motion/react';

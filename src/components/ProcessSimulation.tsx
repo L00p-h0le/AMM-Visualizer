@@ -1,4 +1,3 @@
-
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, ArrowRight, Coins, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TokenIcon } from './TokenIcon';
@@ -9,24 +8,23 @@ import type { AMMType, PoolState, Token } from '../types/amm';
 
 interface ProcessSimulationProps {
   pool: PoolState;
-  isSimulating?: boolean;
+  isSimulating: boolean;
   animationState: 'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing';
   swapDirection: 'AtoB' | 'BtoA';
   swapAmount: number;
   tokenA: Token;
   tokenB: Token;
-  simulationResult?: { in: number; out: number; } | null;
+  simulationResult: { in: number; out: number } | null;
   ammType: AMMType;
-  pendingPool?: PoolState | null;
-  setAnimationState?: (s: 'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing') => void;
-  setPool?: (p: PoolState) => void;
-  setIsSimulating?: (b: boolean) => void;
-  handleSimulate?: () => void;
+  pendingPool: PoolState | null;
+  setAnimationState: (s: 'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing') => void;
+  setIsSimulating: (b: boolean) => void;
+  handleSimulate: () => void;
 }
 
 /** Small token particles that trail behind the main token during sending */
 const TrailingParticles = ({ symbol, direction }: { symbol: string; direction: 'toPool' | 'toWallet' }) => {
-  const delays = [0.5, 1.0, 1.5]; // extended from 0.3, 0.6, 0.9
+  const delays = [0.5, 1.0, 1.5];
   const fromLeft = direction === 'toPool' ? '18%' : '72%';
   const toLeft = direction === 'toPool' ? '68%' : '22%';
 
@@ -37,7 +35,7 @@ const TrailingParticles = ({ symbol, direction }: { symbol: string; direction: '
           key={`particle-${direction}-${i}`}
           initial={{ left: fromLeft, top: '50%', opacity: 0, scale: 0.3 }}
           animate={{ left: toLeft, top: '50%', opacity: [0, 0.6, 0], scale: [0.3, 0.5, 0.2] }}
-          transition={{ duration: 2.5, delay, ease: 'easeInOut' }} // extended from 1.4
+          transition={{ duration: 2.5, delay, ease: 'easeInOut' }}
           className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
         >
           <TokenIcon symbol={symbol} className="w-5 h-5 opacity-60" />
@@ -59,9 +57,8 @@ export const ProcessSimulation = ({
   ammType,
   pendingPool,
   setAnimationState,
-  setPool,
   setIsSimulating,
-  handleSimulate
+  handleSimulate,
 }: ProcessSimulationProps) => {
 
   const inputToken = swapDirection === 'AtoB' ? tokenA : tokenB;
@@ -72,16 +69,16 @@ export const ProcessSimulation = ({
   const currentIndex = sequence.indexOf(animationState);
 
   const prevStep = () => {
-    if (currentIndex > 1 && setAnimationState) {
+    if (currentIndex > 1) {
       setAnimationState(sequence[currentIndex - 1]);
     }
   };
 
   const nextStep = () => {
-    if (currentIndex > 0 && currentIndex < sequence.length - 1 && setAnimationState) {
+    if (currentIndex > 0 && currentIndex < sequence.length - 1) {
       setAnimationState(sequence[currentIndex + 1]);
-    } else if (currentIndex === sequence.length - 1 && setAnimationState && pendingPool && setIsSimulating) {
-      // Done - but do NOT set the pool, it is just a visualization simulation!
+    } else if (currentIndex === sequence.length - 1) {
+      // Finish: reset simulation (visual only, pool unchanged)
       setIsSimulating(false);
       setAnimationState('idle');
     }
@@ -95,9 +92,7 @@ export const ProcessSimulation = ({
       }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
-      <div
-        className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-200 transition-all duration-500"
-      >
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-200 transition-all duration-500">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Zap className={cn('w-5 h-5', isSimulating ? 'text-indigo-500 animate-pulse' : 'text-slate-400')} />
@@ -119,7 +114,7 @@ export const ProcessSimulation = ({
           {/* LEFT: 70% Animation Stage */}
           <div className="lg:w-[70%] relative h-72 bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-between px-4 md:px-12 border border-slate-100">
 
-            {/* ── User Wallet ── */}
+            {/* User Wallet */}
             <motion.div
               className="flex flex-col items-center gap-3 z-10"
               animate={animationState === 'sending' ? { scale: [1, 0.95, 1] } : animationState === 'receiving' ? { scale: [1, 1.05, 1] } : {}}
@@ -146,14 +141,13 @@ export const ProcessSimulation = ({
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">User</div>
             </motion.div>
 
-            {/* ── Token Flow Animations ── */}
+            {/* Token Flow Animations */}
             <div className="absolute inset-0 pointer-events-none">
 
               {/* STAGE 1: Tokens flowing Wallet → Pool */}
               <AnimatePresence>
                 {animationState === 'sending' && (
                   <>
-                    {/* Main token */}
                     <motion.div
                       key="token-to-pool"
                       initial={{ left: '18%', top: '50%', opacity: 0, scale: 0.4 }}
@@ -169,11 +163,7 @@ export const ProcessSimulation = ({
                     >
                       <TokenIcon symbol={inputToken.symbol} className="shadow-xl w-12 h-12 ring-4 ring-white" />
                     </motion.div>
-
-                    {/* Trailing particles */}
                     <TrailingParticles symbol={inputToken.symbol} direction="toPool" />
-
-                    {/* Arrow pulse */}
                     <motion.div
                       className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 z-10"
                       initial={{ opacity: 0 }}
@@ -196,7 +186,7 @@ export const ProcessSimulation = ({
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.5 }}
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30
-                  bg-white px-5 py-3 rounded-xl shadow-lg border border-indigo-200 flex items-center gap-3"
+                      bg-white px-5 py-3 rounded-xl shadow-lg border border-indigo-200 flex items-center gap-3"
                   >
                     <Calculator size={20} className="text-indigo-500 animate-pulse" />
                     <div>
@@ -228,9 +218,7 @@ export const ProcessSimulation = ({
                     >
                       <TokenIcon symbol={outputToken.symbol} className="shadow-xl w-12 h-12 ring-4 ring-white" />
                     </motion.div>
-
                     <TrailingParticles symbol={outputToken.symbol} direction="toWallet" />
-
                     <motion.div
                       className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 z-10"
                       initial={{ opacity: 0 }}
@@ -244,7 +232,7 @@ export const ProcessSimulation = ({
               </AnimatePresence>
             </div>
 
-            {/* ── Liquidity Pool ── */}
+            {/* Liquidity Pool */}
             <div className="flex flex-col items-center gap-3 z-10">
               <div className="relative w-40 h-40 flex items-center justify-center">
                 <motion.div
@@ -263,17 +251,13 @@ export const ProcessSimulation = ({
                 >
                   {/* Token A Reserve Bar */}
                   <motion.div
-                    animate={{
-                      height: `${(pool.x / (pool.x + pool.y)) * 100}%`,
-                    }}
+                    animate={{ height: `${(pool.x / (pool.x + pool.y)) * 100}%` }}
                     transition={{ duration: 1.2, ease: 'easeInOut' }}
                     className={cn("absolute top-0 left-0 right-0 w-full opacity-90", tokenA.color)}
                   />
                   {/* Token B Reserve Bar */}
                   <motion.div
-                    animate={{
-                      height: `${(pool.y / (pool.x + pool.y)) * 100}%`,
-                    }}
+                    animate={{ height: `${(pool.y / (pool.x + pool.y)) * 100}%` }}
                     transition={{ duration: 1.2, ease: 'easeInOut' }}
                     className={cn("absolute bottom-0 left-0 right-0 w-full opacity-90", tokenB.color)}
                   />
@@ -316,30 +300,22 @@ export const ProcessSimulation = ({
                 {[
                   <div key="idle" className="flex flex-col justify-center">
                     <h3 className="text-lg font-bold text-slate-700 mb-2">Ready</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed">Enter a swap amount and click Swap to simulate the AMM execution path step-by-step.</p>
+                    <p className="text-sm text-slate-500 leading-relaxed">Enter a swap amount and click Start to simulate the AMM execution path step-by-step.</p>
                   </div>,
                   <div key="sending" className="flex flex-col justify-center">
-                    <h3 className="text-lg font-bold text-indigo-600 mb-2">
-                      1. Input
-                    </h3>
+                    <h3 className="text-lg font-bold text-indigo-600 mb-2">1. Input</h3>
                     <p className="text-sm text-slate-600 leading-relaxed">User overrides wallet and sends <strong className="text-slate-800">{swapAmount} {inputToken.symbol}</strong> to the liquidity pool smart contract.</p>
                   </div>,
                   <div key="calculating" className="flex flex-col justify-center">
-                    <h3 className="text-lg font-bold text-indigo-600 mb-2">
-                      2. Calculate
-                    </h3>
+                    <h3 className="text-lg font-bold text-indigo-600 mb-2">2. Calculate</h3>
                     <p className="text-sm text-slate-600 leading-relaxed">Pool computes the exact output required. The <strong className="text-slate-800">{ammType}</strong> invariant dictates the price curve shift.</p>
                   </div>,
                   <div key="receiving" className="flex flex-col justify-center">
-                    <h3 className="text-lg font-bold text-green-600 mb-2">
-                      3. Output
-                    </h3>
+                    <h3 className="text-lg font-bold text-green-600 mb-2">3. Output</h3>
                     <p className="text-sm text-slate-600 leading-relaxed">Pool returns <strong className="text-slate-800">{(simulationResult?.out || 0).toFixed(4)} {outputToken.symbol}</strong> back to the user's wallet address.</p>
                   </div>,
                   <div key="balancing" className="flex flex-col justify-center">
-                    <h3 className="text-lg font-bold text-amber-600 mb-2">
-                      4. Rebalance
-                    </h3>
+                    <h3 className="text-lg font-bold text-amber-600 mb-2">4. Rebalance</h3>
                     <p className="text-sm text-slate-600 leading-relaxed">Reserves are permanently updated. The new invariant is stabilized at <strong className="text-slate-800 font-mono">k = {(pendingPool?.k || pool.k).toLocaleString()}</strong>.</p>
                   </div>
                 ]}
