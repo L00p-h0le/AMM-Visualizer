@@ -8,6 +8,7 @@ A frontend-only AMM education app that turns swap mechanics into a guided visual
 - Animates the reserve curve and execution point through the full swap flow
 - Shows live reserve, fee, slippage, and price impact changes
 - Explains each step of the trade in plain language
+- Provides a real-time process simulation with stepper controls for input, calculation, output, and rebalance stages
 - Provides a foundation for later Curve and constant-sum model support
 
 ## Current UX direction
@@ -18,6 +19,7 @@ The current frontend is built as a premium dark dashboard with:
 - A swap control panel with live quote feedback
 - Metrics for reserves, invariant, and current price
 - A math/explanation panel that narrates the swap
+- A process simulation panel that animates the full AMM flow step by step
 - A secondary educational section for deeper learning
 
 ## Tech stack
@@ -37,6 +39,8 @@ Frontend/
 ├─ src/
 │  ├─ components/
 │  ├─ utils/
+│  ├─ lib/
+│  ├─ types/
 │  ├─ App.tsx
 │  ├─ App.css
 │  ├─ index.css
@@ -83,4 +87,5 @@ npm run preview
 - The repo is intentionally scoped to the frontend app only.
 - All AMM math should stay in utility functions so it can be reused by multiple visual states and models.
 - The animation flow is meant to show the complete swap lifecycle: input, execution, reserve shift, output, and final explanation.
+- The process simulation panel uses explicit stages so users can step through or replay the AMM flow.
 - The implementation checklist in `IMPLEMENTATION_TASK_CHECKLIST.md` is the recommended roadmap for future work.
