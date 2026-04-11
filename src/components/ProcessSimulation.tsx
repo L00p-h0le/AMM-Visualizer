@@ -125,7 +125,6 @@ export const ProcessSimulation = ({
   // Animation Refs
   const stageRef = useRef<HTMLDivElement>(null);
   const walletRef = useRef<HTMLDivElement>(null);
-  const ammRef = useRef<HTMLDivElement>(null);
   const poolRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -155,7 +154,6 @@ export const ProcessSimulation = ({
           toRef={poolRef}
           isTransferring={sendingActive}
           symbol={inputToken.symbol}
-          tokenColor={inputToken.symbol === 'ETH' ? 'bg-indigo-500' : 'bg-blue-400'}
           curvature={-360}
         />
         <AnimatedBeam
@@ -164,7 +162,6 @@ export const ProcessSimulation = ({
           toRef={walletRef}
           isTransferring={receivingActive}
           symbol={outputToken.symbol}
-          tokenColor={outputToken.symbol === 'ETH' ? 'bg-indigo-500' : 'bg-blue-400'}
           curvature={250}
         />
 
@@ -249,7 +246,6 @@ export const ProcessSimulation = ({
                 )}
               </AnimatePresence>
               <div
-                ref={ammRef}
                 className={cn(
                   "w-44 h-56 bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] flex flex-col p-6 items-center gap-4 transition-all duration-500 border-2 z-10",
                   currentIndex === 2 ? "border-indigo-400 scale-[1.02]" : "border-transparent"

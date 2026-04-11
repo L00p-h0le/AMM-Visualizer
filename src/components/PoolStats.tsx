@@ -22,7 +22,7 @@ interface PoolStatsProps {
 }
 
 /* ------------------------------------------------------------------ */
-/*  TokenSelect – portal-based dropdown that escapes any transform    */
+/*  TokenSelect - portal-based dropdown that escapes any transform    */
 /* ------------------------------------------------------------------ */
 
 type TokenSelectProps = {

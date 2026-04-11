@@ -9,10 +9,8 @@ interface AnimatedBeamProps {
   toRef: React.RefObject<HTMLDivElement | null>;
   isTransferring: boolean;
   symbol?: string;
-  tokenColor?: string;
   curvature?: number;
   duration?: number;
-  delay?: number;
 }
 
 interface TokenProps {
@@ -28,7 +26,6 @@ interface TokenProps {
 const Token = ({ tokenId, symbol, pathRef, duration, onComplete }: TokenProps) => {
   const tokenRef = useRef<SVGGElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
-  const filterId = useId();
 
   useEffect(() => {
     if (tokenRef.current && pathRef.current) {
@@ -64,16 +61,7 @@ const Token = ({ tokenId, symbol, pathRef, duration, onComplete }: TokenProps) =
 
   return (
     <g ref={tokenRef} style={{ opacity: 0 }}>
-      <defs>
-        <filter id={filterId}>
-          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" />
-          <feColorMatrix type="saturate" values="0" />
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="0.05" />
-          </feComponentTransfer>
-          <feComposite operator="in" in2="SourceGraphic" />
-        </filter>
-      </defs>
+
       <foreignObject width="60" height="60" x="-30" y="-30">
         <div className="flex items-center justify-center w-full h-full">
           <div ref={iconRef} className="relative z-10 flex items-center justify-center w-8 h-8 drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
@@ -92,7 +80,6 @@ export const AnimatedBeam = ({
   toRef,
   isTransferring,
   symbol = "ETH",
-  tokenColor = "bg-emerald-500",
   curvature = -100,
   duration = 3500,
 }: AnimatedBeamProps) => {
@@ -161,7 +148,7 @@ export const AnimatedBeam = ({
       fill="none"
       width="100%"
       height="100%"
-      viewBox="0 0 100% 100%"
+      
       className="pointer-events-none absolute inset-0 z-0 overflow-visible"
       xmlns="http://www.w3.org/2000/svg"
     >
