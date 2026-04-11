@@ -1,9 +1,9 @@
 import { Zap, User, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { AnimatedBeam } from './AnimatedBeam';
-import type { PoolState, Token } from '../types/amm';
+import type { PoolState, Token, AMMType } from '../types/amm';
 
 interface ProcessSimulationProps {
   pool: PoolState;
@@ -15,6 +15,7 @@ interface ProcessSimulationProps {
   tokenB: Token;
   simulationResult: { in: number; out: number } | null;
   pendingPool: PoolState | null;
+  ammType: AMMType;
   setAnimationState: (s: 'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing') => void;
   setIsSimulating: (b: boolean) => void;
   handleSimulate: () => void;
@@ -30,6 +31,7 @@ export const ProcessSimulation = ({
   tokenB,
   simulationResult,
   pendingPool,
+  ammType,
   setAnimationState,
   setIsSimulating,
   handleSimulate,
@@ -52,6 +54,48 @@ export const ProcessSimulation = ({
       setAnimationState('idle');
     }
   };
+
+  // Auto-advance logic
+  useEffect(() => {
+    if (!isSimulating || animationState === 'idle') return;
+
+    let timer: any;
+    const duration = 
+      animationState === 'calculating' ? 3000 : 
+      animationState === 'balancing' ? 3500 : 7000;
+
+    timer = setTimeout(() => {
+      nextStep();
+    }, duration);
+
+    return () => clearTimeout(timer);
+  }, [isSimulating, animationState]);
+
+  // Beam Visibility Logic
+  const [sendingActive, setSendingActive] = useState(false);
+  const [receivingActive, setReceivingActive] = useState(false);
+
+  useEffect(() => {
+    if (animationState === 'sending') {
+      setSendingActive(true);
+      const timer = setTimeout(() => setSendingActive(false), 7000);
+      return () => {
+        clearTimeout(timer);
+        setSendingActive(false);
+      };
+    }
+    if (animationState === 'receiving') {
+      setReceivingActive(true);
+      const timer = setTimeout(() => setReceivingActive(false), 7000);
+      return () => {
+        clearTimeout(timer);
+        setReceivingActive(false);
+      };
+    }
+    // For other states or when resetting
+    setSendingActive(false);
+    setReceivingActive(false);
+  }, [animationState]);
 
   const stepLabels: Record<string, string> = {
     idle: 'READY',
@@ -153,14 +197,14 @@ export const ProcessSimulation = ({
           containerRef={stageRef}
           fromRef={walletRef}
           toRef={poolRef}
-          isTransferring={animationState === 'sending'}
+          isTransferring={sendingActive}
           curvature={-360}
         />
         <AnimatedBeam 
           containerRef={stageRef}
           fromRef={poolRef}
           toRef={walletRef}
-          isTransferring={animationState === 'receiving'}
+          isTransferring={receivingActive}
           curvature={250}
         />
 
@@ -232,7 +276,7 @@ export const ProcessSimulation = ({
                 currentIndex === 2 ? "border-indigo-400 scale-[1.02]" : "border-transparent"
               )}
             >
-              <span className="text-2xl font-black text-slate-800 tracking-tighter mt-4">CPMM</span>
+              <span className="text-2xl font-black text-slate-800 tracking-tighter mt-4">{ammType}</span>
               
               {/* Math Display Area */}
               <div className="flex-1 w-full bg-slate-50/50 rounded-2xl flex items-center justify-center border border-slate-100/50 overflow-hidden">

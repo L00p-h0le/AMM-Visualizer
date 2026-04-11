@@ -52,14 +52,22 @@ export default function App() {
 
   /* ── Simulate (step-through animation) ── */
   const handleSimulate = () => {
-    if (isSimulating || swapAmount <= 0) return;
+    if (swapAmount <= 0) return;
+    
+    if (isSimulating) {
+      setIsSimulating(false);
+      return;
+    }
+
     setIsSimulating(true);
 
-    const { newX, newY, outAmount } = calculateSwap(pool, ammType, swapAmount, swapDirection);
-
-    setSimulationResult({ in: swapAmount, out: outAmount });
-    setPendingPool({ x: newX, y: newY, k: pool.k });
-    setAnimationState('sending');
+    // Only set initial state if we are currently idle
+    if (animationState === 'idle') {
+      const { newX, newY, outAmount } = calculateSwap(pool, ammType, swapAmount, swapDirection);
+      setSimulationResult({ in: swapAmount, out: outAmount });
+      setPendingPool({ x: newX, y: newY, k: pool.k });
+      setAnimationState('sending');
+    }
   };
 
   /* ── Liquidity ── */
