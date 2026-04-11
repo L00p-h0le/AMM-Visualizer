@@ -22,7 +22,7 @@ export function StarBorder({
     display: 'inline-block',
     width: '100%',
     borderRadius: '0.75rem',
-    padding: '2px',            /* ← gap where the gradient shows through */
+    padding: '2px',
     overflow: 'hidden',
   };
 
@@ -44,23 +44,10 @@ export function StarBorder({
   };
 
   return (
-    <>
-      <style>{`
-        @property --star-angle {
-          syntax: "<angle>";
-          initial-value: 0deg;
-          inherits: false;
-        }
-        @keyframes star-spin {
-          from { --star-angle: 0deg; }
-          to { --star-angle: 360deg; }
-        }
-      `}</style>
-      {/* @ts-expect-error dynamic element */}
-      <Component className={className} style={wrapperStyle} {...rest}>
-        <div style={borderStyle} />
-        <div style={contentStyle}>{children}</div>
-      </Component>
-    </>
+    // @ts-expect-error dynamic element
+    <Component className={className} style={wrapperStyle} {...rest}>
+      <div style={borderStyle} />
+      <div style={contentStyle}>{children}</div>
+    </Component>
   );
 }

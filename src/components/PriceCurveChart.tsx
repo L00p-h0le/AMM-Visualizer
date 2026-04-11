@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { motion, AnimatePresence } from 'motion/react';
 import type { AMMType, PoolState } from '../types/amm';
-import { Tilt } from './motion-primitives/tilt';
+import { Tilt } from './Animation/Tilt';
 import { AMPLIFICATION, generateStableSwapCurvePoints } from '../lib/amm';
 
 /** Animated TrendingUp icon — draws in on mount */

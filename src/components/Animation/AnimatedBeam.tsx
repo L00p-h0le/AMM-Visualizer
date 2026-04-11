@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useState, useRef, useCallback } from "react";
 import { motion } from "motion/react";
-import { animate, createMotionPath } from "animejs";
-import { TokenIcon } from "./TokenIcon";
+import { createPath, animateEl } from "../../lib/anime";
+import { TokenIcon } from "../TokenIcon";
 
 interface AnimatedBeamProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -28,40 +28,36 @@ const Token = ({ tokenId, symbol, pathRef, duration, onComplete }: TokenProps) =
   const iconRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (tokenRef.current && pathRef.current) {
-      const motionPath: any = createMotionPath(pathRef.current);
+    if (!tokenRef.current || !pathRef.current) return;
 
-      if (motionPath) {
-        // Main path animation
-        (animate as any)(tokenRef.current, {
-          translateX: motionPath.translateX,
-          translateY: motionPath.translateY,
-          rotate: motionPath.rotate,
-          opacity: [0, 1, 1, 0],
-          scale: [0.4, 1.1, 1.1, 0.4],
-          duration: duration,
-          ease: 'easeInOutCubic',
-          onComplete: () => {
-            onComplete(tokenId);
-          }
-        });
+    const mp = createPath(pathRef.current);
+    if (!mp) return;
 
-        if (iconRef.current) {
-          (animate as any)(iconRef.current, {
-            rotate: [0, 360],
-            duration: duration * 0.8,
-            delay: Math.random() * 300,
-            ease: 'linear',
-            loop: true
-          });
-        }
-      }
+    // Main path animation
+    animateEl(tokenRef.current, {
+      translateX: mp.translateX,
+      translateY: mp.translateY,
+      rotate: mp.rotate,
+      opacity: [0, 1, 1, 0],
+      scale: [0.4, 1.1, 1.1, 0.4],
+      duration,
+      ease: 'easeInOutCubic',
+      onComplete: () => onComplete(tokenId),
+    });
+
+    if (iconRef.current) {
+      animateEl(iconRef.current, {
+        rotate: [0, 360],
+        duration: duration * 0.8,
+        delay: Math.random() * 300,
+        ease: 'linear',
+        loop: true,
+      });
     }
   }, [tokenId, pathRef, duration, onComplete]);
 
   return (
     <g ref={tokenRef} style={{ opacity: 0 }}>
-
       <foreignObject width="60" height="60" x="-30" y="-30">
         <div className="flex items-center justify-center w-full h-full">
           <div ref={iconRef} className="relative z-10 flex items-center justify-center w-8 h-8 drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
@@ -148,7 +144,6 @@ export const AnimatedBeam = ({
       fill="none"
       width="100%"
       height="100%"
-      
       className="pointer-events-none absolute inset-0 z-0 overflow-visible"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -199,4 +194,3 @@ export const AnimatedBeam = ({
     </svg>
   );
 };
-

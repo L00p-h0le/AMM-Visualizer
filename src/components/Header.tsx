@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, ChevronDown, Check } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { AMM_MODELS, type AMMType } from '../types/amm';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 interface HeaderProps {
   ammType: AMMType;
@@ -15,16 +16,7 @@ export const Header = ({ ammType, setAmmType, resetPool }: HeaderProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedAmm = AMM_MODELS.find(m => m.id === ammType) || AMM_MODELS[0];
 
-  useEffect(() => {
-    if (!showAmmDropdown) return;
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowAmmDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showAmmDropdown]);
+  useClickOutside([dropdownRef], () => setShowAmmDropdown(false), showAmmDropdown);
 
   return (
     <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">

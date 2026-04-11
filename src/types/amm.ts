@@ -10,6 +10,7 @@ export interface Token {
   symbol: string;
   name: string;
   color: string;
+  icon?: string;
 }
 
 export interface SwapResult {
@@ -20,11 +21,11 @@ export interface SwapResult {
 }
 
 export const TOKENS: Token[] = [
-  { symbol: 'ETH', name: 'Ethereum', color: 'bg-indigo-500' },
+  { symbol: 'ETH', name: 'Ethereum', color: 'bg-indigo-500', icon: 'https://svgl.app/library/eth.svg' },
   { symbol: 'USDC', name: 'USD Coin', color: 'bg-blue-400' },
-  { symbol: 'USDT', name: 'Tether', color: 'bg-emerald-500' },
-  { symbol: 'BTC', name: 'Bitcoin', color: 'bg-orange-500' },
-  { symbol: 'SOL', name: 'Solana', color: 'bg-purple-500' },
+  { symbol: 'USDT', name: 'Tether', color: 'bg-emerald-500', icon: 'https://svgl.app/library/tether.svg' },
+  { symbol: 'BTC', name: 'Bitcoin', color: 'bg-orange-500', icon: 'https://svgl.app/library/btc.svg' },
+  { symbol: 'SOL', name: 'Solana', color: 'bg-purple-500', icon: 'https://svgl.app/library/sol.svg' },
 ];
 
 export const AMM_MODELS = [

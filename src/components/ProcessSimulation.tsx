@@ -1,8 +1,8 @@
 import { Zap, User, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
-import { useRef } from 'react';
-import { AnimatedBeam } from './AnimatedBeam';
+import { useRef, useMemo } from 'react';
+import { AnimatedBeam } from './Animation/AnimatedBeam';
 import type { PoolState, Token, AMMType } from '../types/amm';
 
 interface ProcessSimulationProps {
@@ -61,7 +61,7 @@ export const ProcessSimulation = ({
     balancing: 'FINAL STEP',
   };
 
-  const explanations: Record<string, { tooltip: string; math: string | React.ReactNode }> = {
+  const explanations = useMemo<Record<string, { tooltip: string; math: string | React.ReactNode }>>(() => ({
     idle: {
       tooltip: `Wallet is ready to send ${swapAmount} ${inputToken.symbol}.`,
       math: `x * y = k`,
@@ -110,7 +110,7 @@ export const ProcessSimulation = ({
         </div>
       ),
     },
-  };
+  }), [swapAmount, inputToken.symbol, outputToken.symbol, currentIndex, simulationResult, pendingPool, pool.x, pool.y, tokenA.symbol, tokenB.symbol]);
 
   const current = explanations[animationState];
 

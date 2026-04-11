@@ -215,12 +215,3 @@ export function calculateSwap(
   return { newX, newY, outAmount, priceImpact };
 }
 
-/** Quick output estimate for the swap preview (includes fee) */
-export function estimateOutput(
-  pool: PoolState,
-  ammType: AMMType,
-  swapAmount: number,
-  swapDirection: 'AtoB' | 'BtoA',
-): number {
-  return calculateSwap(pool, ammType, swapAmount, swapDirection).outAmount;
-}

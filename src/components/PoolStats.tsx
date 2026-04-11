@@ -1,13 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'motion/react';
-import { Droplets, RefreshCw, HelpCircle, ChevronDown, Check } from 'lucide-react';
-import { TokenIcon } from './TokenIcon';
-import { Tilt } from './motion-primitives/tilt';
-import { GlareHover } from './motion-primitives/glare-hover';
-import { TOKENS, type AMMType, type PoolState, type Token } from '../types/amm';
+import { useState } from 'react';
+import { motion } from 'motion/react';
+import { Droplets, RefreshCw, HelpCircle } from 'lucide-react';
+import { Tilt } from './Animation/Tilt';
+import { GlareHover } from './Animation/GlareHover';
+import { TokenSelect } from './TokenSelect';
+import { type AMMType, type PoolState, type Token } from '../types/amm';
 import { computeK } from '../lib/amm';
-import { cn } from '../lib/utils';
 
 interface PoolStatsProps {
   pool: PoolState;
@@ -19,143 +17,6 @@ interface PoolStatsProps {
   setPool: (pool: PoolState) => void;
   currentPrice: string;
   resetPool: () => void;
-}
-
-/* ------------------------------------------------------------------ */
-/*  TokenSelect - portal-based dropdown that escapes any transform    */
-/* ------------------------------------------------------------------ */
-
-type TokenSelectProps = {
-  value: Token;
-  onChange: (token: Token) => void;
-};
-
-function TokenSelect({ value, onChange }: TokenSelectProps) {
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-
-  /* Recalculate position every time we open */
-  const openMenu = useCallback(() => {
-    if (!btnRef.current) return;
-    const r = btnRef.current.getBoundingClientRect();
-    setPos({
-      top: r.bottom + 8,
-      left: r.left + r.width / 2,
-    });
-    setOpen(true);
-  }, []);
-
-  /* Close on outside click or Escape */
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: MouseEvent) => {
-      if (
-        menuRef.current?.contains(e.target as Node) ||
-        btnRef.current?.contains(e.target as Node)
-      )
-        return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  /* Reposition on scroll / resize while open */
-  useEffect(() => {
-    if (!open) return;
-    const reposition = () => {
-      if (!btnRef.current) return;
-      const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 8, left: r.left + r.width / 2 });
-    };
-    window.addEventListener('scroll', reposition, true);
-    window.addEventListener('resize', reposition);
-    return () => {
-      window.removeEventListener('scroll', reposition, true);
-      window.removeEventListener('resize', reposition);
-    };
-  }, [open]);
-
-  return (
-    <>
-      <motion.button
-        ref={btnRef}
-        type="button"
-        onClick={() => (open ? setOpen(false) : openMenu())}
-        whileHover={{ y: -1 }}
-        whileTap={{ scale: 0.97 }}
-        className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-indigo-300 transition-all"
-      >
-        <TokenIcon symbol={value.symbol} className="w-5 h-5" />
-        <span className="font-bold text-sm">{value.symbol}</span>
-        <ChevronDown
-          className={cn('text-slate-400 transition-transform duration-200', open && 'rotate-180')}
-          size={14}
-        />
-      </motion.button>
-
-      {createPortal(
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              ref={menuRef}
-              initial={{ opacity: 0, y: 6, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6, scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-              className="fixed w-52 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2"
-              style={{
-                top: pos.top,
-                left: pos.left,
-                transform: 'translateX(-50%)',
-                zIndex: 9999,
-              }}
-            >
-              {TOKENS.map((token, index) => (
-                <motion.button
-                  key={token.symbol}
-                  type="button"
-                  onClick={() => {
-                    onChange(token);
-                    setOpen(false);
-                  }}
-                  initial={{ opacity: 0, x: -6 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  whileHover={{ x: 2, backgroundColor: 'rgba(238,242,255,0.7)' }}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors',
-                    value.symbol === token.symbol
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'text-slate-700',
-                  )}
-                >
-                  <TokenIcon symbol={token.symbol} className="w-6 h-6 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm">{token.symbol}</div>
-                    <div className="text-[11px] text-slate-400 truncate">{token.name}</div>
-                  </div>
-                  {value.symbol === token.symbol && (
-                    <Check size={14} className="text-indigo-500 shrink-0" />
-                  )}
-                </motion.button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body,
-      )}
-    </>
-  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -175,13 +36,15 @@ export const PoolStats = ({
 }: PoolStatsProps) => {
   const [inputX, setInputX] = useState(String(pool.x));
   const [inputY, setInputY] = useState(String(pool.y));
+  const [prevPool, setPrevPool] = useState({ x: pool.x, y: pool.y });
 
-  useEffect(() => {
-    setInputX(String(pool.x));
-  }, [pool.x]);
-  useEffect(() => {
-    setInputY(String(pool.y));
-  }, [pool.y]);
+  // Sync local inputs when pool changes externally
+  // (React 19 "adjust state on prop change" pattern — no useEffect)
+  if (pool.x !== prevPool.x || pool.y !== prevPool.y) {
+    setPrevPool({ x: pool.x, y: pool.y });
+    if (pool.x !== prevPool.x) setInputX(String(pool.x));
+    if (pool.y !== prevPool.y) setInputY(String(pool.y));
+  }
 
   const commitValue = (axis: 'x' | 'y') => {
     const raw = axis === 'x' ? inputX : inputY;

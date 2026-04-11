@@ -21,3 +21,13 @@ body {
   @apply bg-slate-50 text-slate-900 font-sans antialiased;
 }
 
+/* StarBorder animated conic gradient */
+@property --star-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes star-spin {
+  from { --star-angle: 0deg; }
+  to { --star-angle: 360deg; }
+}

@@ -33,7 +33,7 @@ export function GlareHover({ children, className }: GlareHoverProps) {
         transition: 'box-shadow 0.35s ease',
       }}
     >
-      {/* Radial spotlight – indigo-tinted so it's visible on light bg */}
+      {/* Radial spotlight \u2014 indigo-tinted so it\u2019s visible on light bg */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] transition-opacity duration-300"
@@ -53,7 +53,7 @@ export function GlareHover({ children, className }: GlareHoverProps) {
           opacity: glare.visible ? 1 : 0,
         }}
       />
-      {/* Content – z-20 so it's above the glare layers */}
+      {/* Content \u2014 z-20 so it\u2019s above the glare layers */}
       <div className="relative z-20">{children}</div>
     </div>
   );

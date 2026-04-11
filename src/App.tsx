@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Header } from './components/Header';
 import { PoolStats } from './components/PoolStats';
 import { SwapControls } from './components/SwapControls';
@@ -15,15 +15,26 @@ export default function App() {
   const [tokenB, setTokenB] = useState<Token>(TOKENS[1]);
   const [pool, setPool] = useState<PoolState>(defaultPool('CPMM'));
   const [previousPool, setPreviousPool] = useState<PoolState | null>(null);
-  const [pendingPool, setPendingPool] = useState<PoolState | null>(null);
   const [swapAmount, setSwapAmount] = useState(10);
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapDirection, setSwapDirection] = useState<'AtoB' | 'BtoA'>('AtoB');
   const [lastSwapResult, setLastSwapResult] = useState<SwapResult | null>(null);
-  const [simulationResult, setSimulationResult] = useState<{ in: number; out: number } | null>(null);
   const [animationState, setAnimationState] = useState<'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing'>('idle');
 
   const currentPrice = (pool.y / pool.x).toFixed(4);
+
+  /* ── Simulation: derived from current state (no useEffect / setState) ── */
+  const simulationData = useMemo(() => {
+    if (animationState === 'idle') return null;
+    const { newX, newY, outAmount } = calculateSwap(pool, ammType, swapAmount, swapDirection);
+    return {
+      result: { in: swapAmount, out: outAmount },
+      pendingPool: { x: newX, y: newY, k: pool.k } as PoolState,
+    };
+  }, [animationState, pool, ammType, swapAmount, swapDirection]);
+
+  const simulationResult = simulationData?.result ?? null;
+  const pendingPool = simulationData?.pendingPool ?? null;
 
   /* ── Helpers ── */
   const resetPool = (overrideType?: AMMType) => {
@@ -48,21 +59,6 @@ export default function App() {
     setPool({ x: newX, y: newY, k: pool.k });
     setTimeout(() => setIsSwapping(false), 1000);
   };
-
-  /* ── Simulation Logic (Auto-init when state enters 'sending') ── */
-  useEffect(() => {
-    if (animationState === 'sending' && !simulationResult) {
-      const { newX, newY, outAmount } = calculateSwap(pool, ammType, swapAmount, swapDirection);
-      setSimulationResult({ in: swapAmount, out: outAmount });
-      setPendingPool({ x: newX, y: newY, k: pool.k });
-    }
-    
-    // Cleanup if someone jumps back to idle
-    if (animationState === 'idle') {
-      setSimulationResult(null);
-      setPendingPool(null);
-    }
-  }, [animationState, pool, ammType, swapAmount, swapDirection, simulationResult]);
 
   /* ── Liquidity ── */
   const handleAddLiquidity = (amountA: number, amountB: number) => {
