@@ -209,9 +209,9 @@ export const ProcessSimulation = ({
         />
 
         {/* Step Indicator */}
-        <div className="absolute top-8 left-1/2 -translate-x-1/2">
-          <div className="px-5 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
-            <span className="text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase">{stepLabels[animationState]}</span>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2">
+          <div className="px-3 py-0.5 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center">
+            <span className="text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase leading-none">{stepLabels[animationState]}</span>
           </div>
         </div>
 
