@@ -21,39 +21,18 @@ function UsdcIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 48 48" className={cn('block', className)} aria-hidden="true" role="img">
       <circle cx="24" cy="24" r="24" fill="#2775CA" />
       <circle cx="24" cy="24" r="17" fill="none" stroke="white" strokeWidth="2.6" opacity="0.95" />
+      {/* Dollar sign S-curve */}
       <path
-        d="M29.4 17.1c-1.5-1.4-3.3-2.1-5.4-2.1-4.6 0-8.1 3.3-8.1 9s3.5 9 8.1 9c2.1 0 3.9-.7 5.4-2.1"
+        d="M20.5 18.5c0-2.5 2-4.5 4-4.5s3.5 1.5 3.5 3.5c0 3-7.5 3-7.5 7 0 2 1.5 3.5 3.5 3.5s4-2 4-4.5"
         fill="none"
         stroke="white"
-        strokeWidth="2.5"
+        strokeWidth="2.8"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <path
-        d="M16.6 18.8c-1.1.9-1.7 2.2-1.7 3.8 0 1.7.8 3 2.4 3.9"
-        fill="none"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M31.8 20.1h1.9M31.8 24h3.4M31.8 27.9h1.9"
-        fill="none"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <text
-        x="24"
-        y="31"
-        textAnchor="middle"
-        fontSize="10"
-        fontWeight="700"
-        fill="white"
-        fontFamily="Inter, ui-sans-serif, system-ui, sans-serif"
-      >
-        USDC
-      </text>
-    </svg>
+      {/* Vertical line through dollar sign */}
+      <line x1="24" y1="11" x2="24" y2="37" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
   );
 }
 

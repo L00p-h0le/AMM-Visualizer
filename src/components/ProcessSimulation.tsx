@@ -1,10 +1,9 @@
-import { motion, AnimatePresence } from 'motion/react';
-import { Zap, ArrowRight, Coins, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
-import { TokenIcon } from './TokenIcon';
+import { Zap, User, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { InView } from './motion-primitives/in-view';
-import { TransitionPanel } from './motion-primitives/transition-panel';
-import type { AMMType, PoolState, Token } from '../types/amm';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRef } from 'react';
+import { AnimatedBeam } from './AnimatedBeam';
+import type { PoolState, Token } from '../types/amm';
 
 interface ProcessSimulationProps {
   pool: PoolState;
@@ -15,35 +14,11 @@ interface ProcessSimulationProps {
   tokenA: Token;
   tokenB: Token;
   simulationResult: { in: number; out: number } | null;
-  ammType: AMMType;
   pendingPool: PoolState | null;
   setAnimationState: (s: 'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing') => void;
   setIsSimulating: (b: boolean) => void;
   handleSimulate: () => void;
 }
-
-/** Small token particles that trail behind the main token during sending */
-const TrailingParticles = ({ symbol, direction }: { symbol: string; direction: 'toPool' | 'toWallet' }) => {
-  const delays = [0.5, 1.0, 1.5];
-  const fromLeft = direction === 'toPool' ? '18%' : '72%';
-  const toLeft = direction === 'toPool' ? '68%' : '22%';
-
-  return (
-    <>
-      {delays.map((delay, i) => (
-        <motion.div
-          key={`particle-${direction}-${i}`}
-          initial={{ left: fromLeft, top: '50%', opacity: 0, scale: 0.3 }}
-          animate={{ left: toLeft, top: '50%', opacity: [0, 0.6, 0], scale: [0.3, 0.5, 0.2] }}
-          transition={{ duration: 2.5, delay, ease: 'easeInOut' }}
-          className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
-        >
-          <TokenIcon symbol={symbol} className="w-5 h-5 opacity-60" />
-        </motion.div>
-      ))}
-    </>
-  );
-};
 
 export const ProcessSimulation = ({
   pool,
@@ -54,305 +29,284 @@ export const ProcessSimulation = ({
   tokenA,
   tokenB,
   simulationResult,
-  ammType,
   pendingPool,
   setAnimationState,
   setIsSimulating,
   handleSimulate,
 }: ProcessSimulationProps) => {
-
   const inputToken = swapDirection === 'AtoB' ? tokenA : tokenB;
   const outputToken = swapDirection === 'AtoB' ? tokenB : tokenA;
 
-  // Stepper logic
   const sequence = ['idle', 'sending', 'calculating', 'receiving', 'balancing'] as const;
   const currentIndex = sequence.indexOf(animationState);
 
   const prevStep = () => {
-    if (currentIndex > 1) {
-      setAnimationState(sequence[currentIndex - 1]);
-    }
+    if (currentIndex > 1) setAnimationState(sequence[currentIndex - 1]);
   };
 
   const nextStep = () => {
     if (currentIndex > 0 && currentIndex < sequence.length - 1) {
       setAnimationState(sequence[currentIndex + 1]);
     } else if (currentIndex === sequence.length - 1) {
-      // Finish: reset simulation (visual only, pool unchanged)
       setIsSimulating(false);
       setAnimationState('idle');
     }
   };
 
+  const stepLabels: Record<string, string> = {
+    idle: 'READY',
+    sending: 'STEP 1',
+    calculating: 'STEP 2',
+    receiving: 'STEP 3',
+    balancing: 'STEP 4',
+  };
+
+  const explanations: Record<string, { tooltip: string; math: string | React.ReactNode }> = {
+    idle: {
+      tooltip: `Wallet is ready to send ${swapAmount} ${inputToken.symbol}.`,
+      math: `x * y = k`,
+    },
+    sending: {
+      tooltip: `Preparing to transfer ${swapAmount} ${inputToken.symbol} from the user wallet.`,
+      math: (
+        <div className="flex flex-col items-center">
+          <span className="text-xs text-slate-400">Receiving Input</span>
+          <span className="font-mono text-indigo-600">+{swapAmount} {inputToken.symbol}</span>
+        </div>
+      ),
+    },
+    calculating: {
+      tooltip: `Wallet has already submitted ${inputToken.symbol}. The contract is now computing the quote.`,
+      math: (
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-[10px] text-slate-400 font-mono">(x + Δx)(y - Δy) = k</span>
+          <motion.span 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: currentIndex >= 2 ? 1 : 0 }}
+            className="font-mono text-indigo-600 text-sm"
+          >
+            Δy = y - k/(x+Δx)
+          </motion.span>
+        </div>
+      ),
+    },
+    receiving: {
+      tooltip: `Wallet is about to receive ${(simulationResult?.out || 0).toFixed(4)} ${outputToken.symbol}.`,
+      math: (
+        <div className="flex flex-col items-center">
+          <span className="text-xs text-slate-400">Releasing Output</span>
+          <span className="font-mono text-green-600">{(simulationResult?.out || 0).toFixed(4)} {outputToken.symbol}</span>
+        </div>
+      ),
+    },
+    balancing: {
+      tooltip: `Wallet has completed the route and holds the received output asset.`,
+      math: (
+        <div className="flex flex-col items-center gap-1 px-2 text-center">
+          <span className="text-[10px] text-slate-400">Updated reserves:</span>
+          <span className="text-[10px] font-mono text-indigo-600">
+            {(pendingPool?.x || pool.x).toFixed(2)} {tokenA.symbol} & {(pendingPool?.y || pool.y).toFixed(2)} {tokenB.symbol}
+          </span>
+        </div>
+      ),
+    },
+  };
+
+  const current = explanations[animationState];
+
+  // Logic: Update balance only after specific steps
+  const displayWalletBalance = currentIndex >= 1 ? 0 : swapAmount; // Simplified demonstration of "after send done"
+  const displayReceiveValue = currentIndex >= 3 ? (simulationResult?.out || 0) : 0;
+
+  // Pool balance logic
+  const displayPoolX = currentIndex >= 2 ? (pendingPool?.x || pool.x) : pool.x;
+  const displayPoolY = currentIndex >= 4 ? (pendingPool?.y || pool.y) : pool.y;
+
+  // Animation Refs
+  const stageRef = useRef<HTMLDivElement>(null);
+  const walletRef = useRef<HTMLDivElement>(null);
+  const ammRef = useRef<HTMLDivElement>(null);
+  const poolRef = useRef<HTMLDivElement>(null);
+
   return (
-    <InView
-      variants={{
-        hidden: { opacity: 0, y: 40 },
-        visible: { opacity: 1, y: 0 }
-      }}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-    >
-      <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-slate-200 transition-all duration-500">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Zap className={cn('w-5 h-5', isSimulating ? 'text-indigo-500 animate-pulse' : 'text-slate-400')} />
-            Real-time Process Simulation
-          </h2>
-          {animationState === 'idle' && (
-            <button
-              onClick={handleSimulate}
-              className="px-6 py-2 bg-indigo-100/50 hover:bg-indigo-600 hover:text-white text-indigo-700 font-bold rounded-xl text-sm transition-all shadow-sm"
-            >
-              Start
-            </button>
-          )}
+    <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[calc(100vh-6rem)] flex flex-col">
+      {/* Header */}
+      <div className="mb-10 px-2 text-left">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
+            <Zap className="w-4 h-4 text-slate-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Real-time Process Simulation</h2>
+        </div>
+        <p className="text-sm text-slate-400 font-medium ml-10">
+          Current Price · 1 {tokenA.symbol} = {(pool.y / pool.x).toFixed(4)} {tokenB.symbol}
+        </p>
+      </div>
+
+      {/* Main Stage */}
+      <div 
+        ref={stageRef}
+        className="flex-1 relative bg-slate-50/50 rounded-[2.5rem] border border-slate-100/80 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] flex flex-col items-center justify-center p-8 min-h-[500px]"
+      >
+        {/* Animated Beams */}
+        <AnimatedBeam 
+          containerRef={stageRef}
+          fromRef={walletRef}
+          toRef={poolRef}
+          isTransferring={animationState === 'sending'}
+          curvature={-360}
+        />
+        <AnimatedBeam 
+          containerRef={stageRef}
+          fromRef={poolRef}
+          toRef={walletRef}
+          isTransferring={animationState === 'receiving'}
+          curvature={250}
+        />
+
+        {/* Step Indicator */}
+        <div className="absolute top-8 left-1/2 -translate-x-1/2">
+          <div className="px-5 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
+            <span className="text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase">{stepLabels[animationState]}</span>
+          </div>
         </div>
 
-        {/* Split Layout: 70% Animation, 30% Explanation */}
-        <div className="flex flex-col lg:flex-row gap-8 items-stretch">
-
-          {/* LEFT: 70% Animation Stage */}
-          <div className="lg:w-[70%] relative h-72 bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-between px-4 md:px-12 border border-slate-100">
-
-            {/* User Wallet */}
-            <motion.div
-              className="flex flex-col items-center gap-3 z-10"
-              animate={animationState === 'sending' ? { scale: [1, 0.95, 1] } : animationState === 'receiving' ? { scale: [1, 1.05, 1] } : {}}
-              transition={{ duration: 1 }}
-            >
-              <div className={cn(
-                'w-20 h-20 bg-white rounded-2xl shadow-sm border-2 flex items-center justify-center transition-all duration-500',
-                animationState === 'sending' ? 'border-amber-300 shadow-amber-100' : animationState === 'receiving' ? 'border-green-300 shadow-green-100' : 'border-slate-200'
-              )}>
-                <div className="text-center">
-                  <div className="text-slate-500 font-bold text-xs uppercase tracking-tighter">Wallet</div>
-                  {animationState === 'sending' && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[9px] text-amber-500 font-bold mt-0.5">
-                      −{swapAmount} {inputToken.symbol}
-                    </motion.div>
-                  )}
-                  {animationState === 'receiving' && simulationResult && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[9px] text-green-500 font-bold mt-0.5">
-                      +{simulationResult.out.toFixed(2)} {outputToken.symbol}
-                    </motion.div>
-                  )}
-                </div>
-              </div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">User</div>
-            </motion.div>
-
-            {/* Token Flow Animations */}
-            <div className="absolute inset-0 pointer-events-none">
-
-              {/* STAGE 1: Tokens flowing Wallet → Pool */}
-              <AnimatePresence>
-                {animationState === 'sending' && (
-                  <>
-                    <motion.div
-                      key="token-to-pool"
-                      initial={{ left: '18%', top: '50%', opacity: 0, scale: 0.4 }}
-                      animate={{
-                        left: ['18%', '35%', '55%', '72%'],
-                        top: ['50%', '42%', '56%', '50%'],
-                        opacity: [0, 1, 1, 0.8],
-                        scale: [0.4, 1, 1.1, 0.6],
-                      }}
-                      exit={{ opacity: 0, scale: 0 }}
-                      transition={{ duration: 4, ease: 'easeInOut' }}
-                      className="absolute -translate-x-1/2 -translate-y-1/2 z-30"
-                    >
-                      <TokenIcon symbol={inputToken.symbol} className="shadow-xl w-12 h-12 ring-4 ring-white" />
-                    </motion.div>
-                    <TrailingParticles symbol={inputToken.symbol} direction="toPool" />
-                    <motion.div
-                      className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 z-10"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0, 1, 0.5, 1, 0] }}
-                      transition={{ duration: 4, ease: 'easeInOut' }}
-                    >
-                      <ArrowRight size={28} className="text-indigo-400" strokeWidth={2} />
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-
-              {/* STAGE 2: Calculating badge */}
-              <AnimatePresence>
-                {animationState === 'calculating' && (
-                  <motion.div
-                    key="calc-badge"
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.5 }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30
-                      bg-white px-5 py-3 rounded-xl shadow-lg border border-indigo-200 flex items-center gap-3"
-                  >
-                    <Calculator size={20} className="text-indigo-500 animate-pulse" />
-                    <div>
-                      <div className="text-xs font-bold text-slate-700">Computing output...</div>
-                      <div className="text-[10px] text-slate-400 font-mono">
-                        {ammType === 'CPMM' ? 'Δy = y − k/(x+Δx)' : ammType === 'CSMM' ? 'Δy = min(y, Δx)' : 'StableSwap curve'}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* STAGE 3: Tokens flowing Pool → Wallet */}
-              <AnimatePresence>
-                {animationState === 'receiving' && (
-                  <>
-                    <motion.div
-                      key="token-to-wallet"
-                      initial={{ left: '72%', top: '50%', opacity: 0, scale: 0.4 }}
-                      animate={{
-                        left: ['72%', '55%', '35%', '22%'],
-                        top: ['50%', '58%', '44%', '50%'],
-                        opacity: [0, 1, 1, 0.8],
-                        scale: [0.4, 1, 1.1, 0.6],
-                      }}
-                      exit={{ opacity: 0, scale: 0 }}
-                      transition={{ duration: 4, ease: 'easeInOut' }}
-                      className="absolute -translate-x-1/2 -translate-y-1/2 z-30"
-                    >
-                      <TokenIcon symbol={outputToken.symbol} className="shadow-xl w-12 h-12 ring-4 ring-white" />
-                    </motion.div>
-                    <TrailingParticles symbol={outputToken.symbol} direction="toWallet" />
-                    <motion.div
-                      className="absolute top-1/2 left-[45%] -translate-y-1/2 -translate-x-1/2 z-10"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0, 1, 0.5, 1, 0] }}
-                      transition={{ duration: 4, ease: 'easeInOut' }}
-                    >
-                      <ArrowRight size={28} className="text-green-400 rotate-180" strokeWidth={2} />
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Liquidity Pool */}
-            <div className="flex flex-col items-center gap-3 z-10">
-              <div className="relative w-40 h-40 flex items-center justify-center">
+        {/* Content Row: Parallel alignment */}
+        <div className="w-full max-w-5xl flex items-center justify-between gap-4">
+          
+          {/* USER WALLET */}
+          <div className="flex flex-col items-center group">
+            {/* Tooltip bubble */}
+            <div className="h-20 mb-4 flex items-end">
+              <AnimatePresence mode="wait">
                 <motion.div
-                  animate={
-                    animationState === 'sending'
-                      ? { scale: [1, 1.06, 1], boxShadow: ['0 0 0 rgba(99,102,241,0)', '0 0 30px rgba(99,102,241,0.3)', '0 0 0 rgba(99,102,241,0)'] }
-                      : animationState === 'balancing'
-                        ? { scale: [1, 1.08, 0.96, 1], rotate: [0, 8, -8, 0] }
-                        : {}
-                  }
-                  transition={{ duration: animationState === 'sending' ? 4 : 3, ease: 'easeInOut' }}
-                  className={cn(
-                    'w-full h-full rounded-full shadow-inner flex items-center justify-center relative overflow-hidden border-4 transition-colors duration-500 border-slate-200 bg-slate-200',
-                    animationState === 'sending' ? 'shadow-indigo-200' : ''
-                  )}
+                  key={animationState}
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                  className="bg-white p-4 rounded-xl shadow-lg border border-slate-100 relative text-[11px] text-slate-500 leading-relaxed font-medium max-w-[150px]"
                 >
-                  {/* Token A Reserve Bar */}
-                  <motion.div
-                    animate={{ height: `${(pool.x / (pool.x + pool.y)) * 100}%` }}
-                    transition={{ duration: 1.2, ease: 'easeInOut' }}
-                    className={cn("absolute top-0 left-0 right-0 w-full opacity-90", tokenA.color)}
-                  />
-                  {/* Token B Reserve Bar */}
-                  <motion.div
-                    animate={{ height: `${(pool.y / (pool.x + pool.y)) * 100}%` }}
-                    transition={{ duration: 1.2, ease: 'easeInOut' }}
-                    className={cn("absolute bottom-0 left-0 right-0 w-full opacity-90", tokenB.color)}
-                  />
-
-                  <div className="z-20 flex flex-col items-center text-white drop-shadow-md">
-                    <Coins size={32} />
-                    <span className="text-[10px] font-black uppercase tracking-widest mt-1">Pool</span>
-                  </div>
+                  {current.tooltip}
+                  {/* Bubble Tail */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-slate-100 rotate-45 -mt-1.5 shadow-[2px_2px_2px_rgba(0,0,0,0.02)]" />
                 </motion.div>
+              </AnimatePresence>
+            </div>
 
-                {/* K Constant Ring */}
-                <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none">
-                  <circle
-                    cx="80" cy="80" r="76"
-                    fill="none"
-                    stroke="#4f46e5"
-                    strokeWidth="2"
-                    strokeDasharray="10 5"
-                    className={cn('opacity-20 transition-opacity duration-500', animationState === 'balancing' && 'animate-spin-slow opacity-100')}
-                  />
-                </svg>
+            {/* Wallet Card */}
+            <div 
+              ref={walletRef}
+              className={cn(
+                "w-40 h-52 bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] p-5 flex flex-col items-center gap-4 transition-all duration-500 border-2 z-10",
+                currentIndex === 1 ? "border-indigo-400 scale-[1.02]" : "border-transparent"
+              )}
+            >
+              <div className="w-14 h-14 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200">
+                <User className="w-7 h-7 text-white" />
               </div>
-              <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Liquidity Pool</div>
-            </div>
-          </div>
-
-          {/* RIGHT: 30% Dynamic Explanation */}
-          <div className="lg:w-[30%] bg-indigo-50/50 border border-indigo-100 rounded-2xl p-6 flex flex-col justify-center relative overflow-hidden">
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Current Process</div>
-            <div className="relative min-h-[140px] overflow-hidden">
-              <TransitionPanel
-                activeIndex={currentIndex}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
-                variants={{
-                  enter: { opacity: 0, y: 15 },
-                  center: { opacity: 1, y: 0 },
-                  exit: { opacity: 0, y: -15 }
-                }}
-              >
-                {[
-                  <div key="idle" className="flex flex-col justify-center">
-                    <h3 className="text-lg font-bold text-slate-700 mb-2">Ready</h3>
-                    <p className="text-sm text-slate-500 leading-relaxed">Enter a swap amount and click Start to simulate the AMM execution path step-by-step.</p>
-                  </div>,
-                  <div key="sending" className="flex flex-col justify-center">
-                    <h3 className="text-lg font-bold text-indigo-600 mb-2">1. Input</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">User overrides wallet and sends <strong className="text-slate-800">{swapAmount} {inputToken.symbol}</strong> to the liquidity pool smart contract.</p>
-                  </div>,
-                  <div key="calculating" className="flex flex-col justify-center">
-                    <h3 className="text-lg font-bold text-indigo-600 mb-2">2. Calculate</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">Pool computes the exact output required. The <strong className="text-slate-800">{ammType}</strong> invariant dictates the price curve shift.</p>
-                  </div>,
-                  <div key="receiving" className="flex flex-col justify-center">
-                    <h3 className="text-lg font-bold text-green-600 mb-2">3. Output</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">Pool returns <strong className="text-slate-800">{(simulationResult?.out || 0).toFixed(4)} {outputToken.symbol}</strong> back to the user's wallet address.</p>
-                  </div>,
-                  <div key="balancing" className="flex flex-col justify-center">
-                    <h3 className="text-lg font-bold text-amber-600 mb-2">4. Rebalance</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">Reserves are permanently updated. The new invariant is stabilized at <strong className="text-slate-800 font-mono">k = {(pendingPool?.k || pool.k).toLocaleString()}</strong>.</p>
-                  </div>
-                ]}
-              </TransitionPanel>
-            </div>
-
-            {/* Stepper Controls */}
-            {animationState !== 'idle' && (
-              <div className="mt-8 flex items-center justify-between border-t border-indigo-200/50 pt-4 z-20">
-                <button
-                  onClick={prevStep}
-                  disabled={currentIndex <= 1}
-                  className="p-2 hover:bg-slate-200/50 rounded-lg text-indigo-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1 text-xs font-bold shrink-0"
-                >
-                  <ChevronLeft size={16} /> Prev
-                </button>
-
-                <div className="flex gap-1.5 flex-1 justify-center px-4">
-                  {sequence.slice(1).map((s, i) => (
-                    <div key={s} className={cn(
-                      "flex-1 h-1.5 rounded-full transition-colors",
-                      s === animationState ? "bg-indigo-500" : i < currentIndex ? "bg-indigo-300" : "bg-indigo-100"
-                    )} />
-                  ))}
+              <div className="flex flex-col items-center">
+                <span className="text-xl font-bold text-slate-900 tracking-tight mt-2">
+                  {animationState === 'idle' ? swapAmount : displayWalletBalance} {inputToken.symbol}
+                </span>
+              </div>
+              <div className="w-full pt-4 border-t border-slate-50 flex flex-col gap-1">
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="text-slate-400">Send</span>
+                  <span className="font-bold text-slate-900">{swapAmount} {inputToken.symbol}</span>
                 </div>
-
-                <button
-                  onClick={nextStep}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 shadow-md shadow-indigo-200 shrink-0"
-                >
-                  {currentIndex === sequence.length - 1 ? 'Finish' : 'Next'} <ChevronRight size={16} />
-                </button>
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="text-slate-400">Receive</span>
+                  <span className="font-bold text-slate-900">{displayReceiveValue.toFixed(4)} {outputToken.symbol}</span>
+                </div>
               </div>
-            )}
+            </div>
+            <span className="mt-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">USER WALLET</span>
           </div>
+
+          {/* AMM MODEL */}
+          <div className="flex-1 flex flex-col items-center">
+            <div 
+              ref={ammRef}
+              className={cn(
+                "w-44 h-56 bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] flex flex-col p-6 items-center gap-4 transition-all duration-500 border-2 z-10",
+                currentIndex === 2 ? "border-indigo-400 scale-[1.02]" : "border-transparent"
+              )}
+            >
+              <span className="text-2xl font-black text-slate-800 tracking-tighter mt-4">CPMM</span>
+              
+              {/* Math Display Area */}
+              <div className="flex-1 w-full bg-slate-50/50 rounded-2xl flex items-center justify-center border border-slate-100/50 overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={animationState}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="w-full flex justify-center"
+                  >
+                    {current.math}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+
+          {/* LIQUIDITY POOL */}
+          <div className="flex flex-col items-center">
+            <div className="h-20 mb-4" /> {/* Spacer to align with tooltip row */}
+            <div 
+              ref={poolRef}
+              className="w-48 h-48 relative flex items-center justify-center z-10"
+            >
+              {/* Large Circular Chart */}
+              <div className="w-40 h-40 rounded-full shadow-2xl overflow-hidden border-8 border-white flex flex-col bg-slate-100">
+                {/* Upper: Token A */}
+                <div className="h-1/2 w-full flex items-center justify-center relative bg-indigo-500/80">
+                  <div className="flex flex-col items-center text-white">
+                    <span className="text-[10px] font-bold text-white/70 uppercase">{tokenA.symbol}</span>
+                    <span className="text-xs font-bold">{displayPoolX.toFixed(2)}</span>
+                  </div>
+                </div>
+                {/* Lower: Token B */}
+                <div className="h-1/2 w-full flex items-center justify-center bg-blue-400/80">
+                  <div className="flex flex-col items-center text-white">
+                    <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{tokenB.symbol}</span>
+                    <span className="text-xs font-bold">{displayPoolY.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span className="mt-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">LIQUIDITY POOL</span>
+          </div>
+
+        </div>
+
+        {/* Global Controls - Icons Only (Resized -35%) */}
+        <div className="absolute bottom-8 flex items-center gap-3">
+          <button 
+            onClick={prevStep}
+            disabled={currentIndex === 0}
+            className="w-8 h-8 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all disabled:opacity-30"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
+          <button 
+            onClick={handleSimulate}
+            className="w-10 h-10 bg-slate-900 rounded-full shadow-lg shadow-slate-200 flex items-center justify-center text-white hover:bg-slate-800 transition-all group"
+          >
+            {isSimulating ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white ml-0.5" />}
+          </button>
+
+          <button 
+            onClick={nextStep}
+            disabled={currentIndex === sequence.length - 1}
+            className="w-8 h-8 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all disabled:opacity-30"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
-    </InView>
+    </div>
   );
 };
