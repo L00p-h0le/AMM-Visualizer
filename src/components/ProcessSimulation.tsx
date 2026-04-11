@@ -60,9 +60,9 @@ export const ProcessSimulation = ({
     if (!isSimulating || animationState === 'idle') return;
 
     let timer: any;
-    const duration = 
-      animationState === 'calculating' ? 3000 : 
-      animationState === 'balancing' ? 3500 : 7000;
+    const duration =
+      animationState === 'calculating' ? 3000 :
+        animationState === 'balancing' ? 3500 : 7000;
 
     timer = setTimeout(() => {
       nextStep();
@@ -124,7 +124,7 @@ export const ProcessSimulation = ({
       math: (
         <div className="flex flex-col items-center gap-1">
           <span className="text-[10px] text-slate-400 font-mono">(x + Δx)(y - Δy) = k</span>
-          <motion.span 
+          <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: currentIndex >= 2 ? 1 : 0 }}
             className="font-mono text-indigo-600 text-sm"
@@ -188,19 +188,19 @@ export const ProcessSimulation = ({
       </div>
 
       {/* Main Stage */}
-      <div 
+      <div
         ref={stageRef}
         className="flex-1 relative bg-slate-50/50 rounded-[2.5rem] border border-slate-100/80 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] flex flex-col items-center justify-center p-8 min-h-[500px]"
       >
         {/* Animated Beams */}
-        <AnimatedBeam 
+        <AnimatedBeam
           containerRef={stageRef}
           fromRef={walletRef}
           toRef={poolRef}
           isTransferring={sendingActive}
           curvature={-360}
         />
-        <AnimatedBeam 
+        <AnimatedBeam
           containerRef={stageRef}
           fromRef={poolRef}
           toRef={walletRef}
@@ -209,7 +209,7 @@ export const ProcessSimulation = ({
         />
 
         {/* Step Indicator */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 -ml-[19px]">
           <div className="px-3 py-0.5 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center">
             <span className="text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase leading-none">{stepLabels[animationState]}</span>
           </div>
@@ -217,28 +217,30 @@ export const ProcessSimulation = ({
 
         {/* Content Row: Parallel alignment */}
         <div className="w-full max-w-5xl flex items-center justify-between gap-4">
-          
+
           {/* USER WALLET */}
           <div className="flex flex-col items-center group">
-            {/* Tooltip bubble */}
+            {/* Tooltip bubble - Wallet Context (Steps 1, 3, 4) */}
             <div className="h-20 mb-4 flex items-end">
               <AnimatePresence mode="wait">
-                <motion.div
-                  key={animationState}
-                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                  className="bg-white p-4 rounded-xl shadow-lg border border-slate-100 relative text-[11px] text-slate-500 leading-relaxed font-medium max-w-[150px]"
-                >
-                  {current.tooltip}
-                  {/* Bubble Tail */}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-slate-100 rotate-45 -mt-1.5 shadow-[2px_2px_2px_rgba(0,0,0,0.02)]" />
-                </motion.div>
+                {['idle', 'sending', 'receiving', 'balancing'].includes(animationState) && (
+                  <motion.div
+                    key={animationState}
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                    className="bg-white p-4 rounded-xl shadow-lg border border-slate-100 relative text-[11px] text-slate-500 leading-relaxed font-medium max-w-[150px]"
+                  >
+                    {explanations[animationState].tooltip}
+                    {/* Bubble Tail */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-slate-100 rotate-45 -mt-1.5 shadow-[2px_2px_2px_rgba(0,0,0,0.02)]" />
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
 
             {/* Wallet Card */}
-            <div 
+            <div
               ref={walletRef}
               className={cn(
                 "w-40 h-52 bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] p-5 flex flex-col items-center gap-4 transition-all duration-500 border-2 z-10",
@@ -269,7 +271,24 @@ export const ProcessSimulation = ({
 
           {/* AMM MODEL */}
           <div className="flex-1 flex flex-col items-center">
-            <div 
+            <div className="relative">
+              {/* Tooltip bubble - AMM Context (Diagonally Left) - Positioned relative to the Card */}
+              <AnimatePresence mode="wait">
+                {animationState === 'calculating' && (
+                  <motion.div
+                    key={animationState}
+                    initial={{ opacity: 0, scale: 0.9, x: 20, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, x: -25, y: -10 }}
+                    exit={{ opacity: 0, scale: 0.9, x: 20, y: 10 }}
+                    className="absolute bottom-full left-0 -translate-x-[60%] bg-white p-4 rounded-xl shadow-lg border border-slate-100 text-[11px] text-slate-500 leading-relaxed font-medium w-[170px] z-20 mb-1"
+                  >
+                    {current.tooltip}
+                    {/* Bubble Tail */}
+                    <div className="absolute top-full right-6 w-3 h-3 bg-white border-r border-b border-slate-100 rotate-45 -mt-1.5 shadow-[2px_2px_2px_rgba(0,0,0,0.02)]" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            <div
               ref={ammRef}
               className={cn(
                 "w-44 h-56 bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] flex flex-col p-6 items-center gap-4 transition-all duration-500 border-2 z-10",
@@ -277,7 +296,7 @@ export const ProcessSimulation = ({
               )}
             >
               <span className="text-2xl font-black text-slate-800 tracking-tighter mt-4">{ammType}</span>
-              
+
               {/* Math Display Area */}
               <div className="flex-1 w-full bg-slate-50/50 rounded-2xl flex items-center justify-center border border-slate-100/50 overflow-hidden">
                 <AnimatePresence mode="wait">
@@ -294,11 +313,12 @@ export const ProcessSimulation = ({
               </div>
             </div>
           </div>
+        </div>
 
           {/* LIQUIDITY POOL */}
           <div className="flex flex-col items-center">
-            <div className="h-20 mb-4" /> {/* Spacer to align with tooltip row */}
-            <div 
+            <div className="h-20 mb-4" /> {/* Empty spacer to maintain row alignment */}
+            <div
               ref={poolRef}
               className="w-48 h-48 relative flex items-center justify-center z-10"
             >
@@ -326,23 +346,23 @@ export const ProcessSimulation = ({
         </div>
 
         {/* Global Controls - Icons Only (Resized -35%) */}
-        <div className="absolute bottom-8 flex items-center gap-3">
-          <button 
+        <div className="absolute bottom-8 flex items-center gap-3 -ml-[30px]">
+          <button
             onClick={prevStep}
             disabled={currentIndex === 0}
             className="w-8 h-8 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all disabled:opacity-30"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          
-          <button 
+
+          <button
             onClick={handleSimulate}
             className="w-10 h-10 bg-slate-900 rounded-full shadow-lg shadow-slate-200 flex items-center justify-center text-white hover:bg-slate-800 transition-all group"
           >
             {isSimulating ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white ml-0.5" />}
           </button>
 
-          <button 
+          <button
             onClick={nextStep}
             disabled={currentIndex === sequence.length - 1}
             className="w-8 h-8 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all disabled:opacity-30"
