@@ -1,13 +1,12 @@
-import { Zap, User, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { Zap, User, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useRef, useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useRef } from 'react';
 import { AnimatedBeam } from './AnimatedBeam';
 import type { PoolState, Token, AMMType } from '../types/amm';
 
 interface ProcessSimulationProps {
   pool: PoolState;
-  isSimulating: boolean;
   animationState: 'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing';
   swapDirection: 'AtoB' | 'BtoA';
   swapAmount: number;
@@ -17,24 +16,19 @@ interface ProcessSimulationProps {
   pendingPool: PoolState | null;
   ammType: AMMType;
   setAnimationState: (s: 'idle' | 'sending' | 'calculating' | 'receiving' | 'balancing') => void;
-  setIsSimulating: (b: boolean) => void;
-  handleSimulate: () => void;
 }
 
 export const ProcessSimulation = ({
   pool,
-  isSimulating,
   animationState,
   swapDirection,
   swapAmount,
   tokenA,
   tokenB,
   simulationResult,
-  pendingPool,
   ammType,
+  pendingPool,
   setAnimationState,
-  setIsSimulating,
-  handleSimulate,
 }: ProcessSimulationProps) => {
   const inputToken = swapDirection === 'AtoB' ? tokenA : tokenB;
   const outputToken = swapDirection === 'AtoB' ? tokenB : tokenA;
@@ -42,67 +36,29 @@ export const ProcessSimulation = ({
   const sequence = ['idle', 'sending', 'calculating', 'receiving', 'balancing'] as const;
   const currentIndex = sequence.indexOf(animationState);
 
-  const prevStep = () => {
-    if (currentIndex > 1) setAnimationState(sequence[currentIndex - 1]);
-  };
-
+  // Manual reset logic: clicking forward on the final step returns to idle
   const nextStep = () => {
-    if (currentIndex > 0 && currentIndex < sequence.length - 1) {
+    if (currentIndex < sequence.length - 1) {
       setAnimationState(sequence[currentIndex + 1]);
-    } else if (currentIndex === sequence.length - 1) {
-      setIsSimulating(false);
+    } else {
       setAnimationState('idle');
     }
   };
 
-  // Auto-advance logic
-  useEffect(() => {
-    if (!isSimulating || animationState === 'idle') return;
-
-    let timer: any;
-    const duration =
-      animationState === 'calculating' ? 3000 :
-        animationState === 'balancing' ? 3500 : 7000;
-
-    timer = setTimeout(() => {
-      nextStep();
-    }, duration);
-
-    return () => clearTimeout(timer);
-  }, [isSimulating, animationState]);
+  const prevStep = () => {
+    if (currentIndex > 0) setAnimationState(sequence[currentIndex - 1]);
+  };
 
   // Beam Visibility Logic
-  const [sendingActive, setSendingActive] = useState(false);
-  const [receivingActive, setReceivingActive] = useState(false);
-
-  useEffect(() => {
-    if (animationState === 'sending') {
-      setSendingActive(true);
-      const timer = setTimeout(() => setSendingActive(false), 7000);
-      return () => {
-        clearTimeout(timer);
-        setSendingActive(false);
-      };
-    }
-    if (animationState === 'receiving') {
-      setReceivingActive(true);
-      const timer = setTimeout(() => setReceivingActive(false), 7000);
-      return () => {
-        clearTimeout(timer);
-        setReceivingActive(false);
-      };
-    }
-    // For other states or when resetting
-    setSendingActive(false);
-    setReceivingActive(false);
-  }, [animationState]);
+  const sendingActive = animationState === 'sending';
+  const receivingActive = animationState === 'receiving';
 
   const stepLabels: Record<string, string> = {
     idle: 'READY',
     sending: 'STEP 1',
     calculating: 'STEP 2',
     receiving: 'STEP 3',
-    balancing: 'STEP 4',
+    balancing: 'FINAL STEP',
   };
 
   const explanations: Record<string, { tooltip: string; math: string | React.ReactNode }> = {
@@ -198,6 +154,8 @@ export const ProcessSimulation = ({
           fromRef={walletRef}
           toRef={poolRef}
           isTransferring={sendingActive}
+          symbol={inputToken.symbol}
+          tokenColor={inputToken.symbol === 'ETH' ? 'bg-indigo-500' : 'bg-blue-400'}
           curvature={-360}
         />
         <AnimatedBeam
@@ -205,6 +163,8 @@ export const ProcessSimulation = ({
           fromRef={poolRef}
           toRef={walletRef}
           isTransferring={receivingActive}
+          symbol={outputToken.symbol}
+          tokenColor={outputToken.symbol === 'ETH' ? 'bg-indigo-500' : 'bg-blue-400'}
           curvature={250}
         />
 
@@ -288,32 +248,32 @@ export const ProcessSimulation = ({
                   </motion.div>
                 )}
               </AnimatePresence>
-            <div
-              ref={ammRef}
-              className={cn(
-                "w-44 h-56 bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] flex flex-col p-6 items-center gap-4 transition-all duration-500 border-2 z-10",
-                currentIndex === 2 ? "border-indigo-400 scale-[1.02]" : "border-transparent"
-              )}
-            >
-              <span className="text-2xl font-black text-slate-800 tracking-tighter mt-4">{ammType}</span>
+              <div
+                ref={ammRef}
+                className={cn(
+                  "w-44 h-56 bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] flex flex-col p-6 items-center gap-4 transition-all duration-500 border-2 z-10",
+                  currentIndex === 2 ? "border-indigo-400 scale-[1.02]" : "border-transparent"
+                )}
+              >
+                <span className="text-2xl font-black text-slate-800 tracking-tighter mt-4">{ammType}</span>
 
-              {/* Math Display Area */}
-              <div className="flex-1 w-full bg-slate-50/50 rounded-2xl flex items-center justify-center border border-slate-100/50 overflow-hidden">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={animationState}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="w-full flex justify-center"
-                  >
-                    {current.math}
-                  </motion.div>
-                </AnimatePresence>
+                {/* Math Display Area */}
+                <div className="flex-1 w-full bg-slate-50/50 rounded-2xl flex items-center justify-center border border-slate-100/50 overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={animationState}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="w-full flex justify-center"
+                    >
+                      {current.math}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
           {/* LIQUIDITY POOL */}
           <div className="flex flex-col items-center">
@@ -345,29 +305,25 @@ export const ProcessSimulation = ({
 
         </div>
 
-        {/* Global Controls - Icons Only (Resized -35%) */}
-        <div className="absolute bottom-8 flex items-center gap-3 -ml-[30px]">
+        {/* Global Controls - Manual Navigation */}
+        <div className="absolute bottom-8 flex items-center gap-6">
           <button
             onClick={prevStep}
             disabled={currentIndex === 0}
-            className="w-8 h-8 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all disabled:opacity-30"
+            className="w-10 h-10 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all disabled:opacity-30 group"
           >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={handleSimulate}
-            className="w-10 h-10 bg-slate-900 rounded-full shadow-lg shadow-slate-200 flex items-center justify-center text-white hover:bg-slate-800 transition-all group"
-          >
-            {isSimulating ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white ml-0.5" />}
+            <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
           </button>
 
           <button
             onClick={nextStep}
-            disabled={currentIndex === sequence.length - 1}
-            className="w-8 h-8 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all disabled:opacity-30"
+            className="w-10 h-10 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all group"
           >
-            <ChevronRight className="w-4 h-4" />
+            {currentIndex === sequence.length - 1 ? (
+              <RotateCcw className="w-5 h-5 transition-transform group-hover:rotate-[-45deg]" />
+            ) : (
+              <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />
+            )}
           </button>
         </div>
       </div>

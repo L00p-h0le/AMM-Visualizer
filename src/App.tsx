@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PoolStats } from './components/PoolStats';
 import { SwapControls } from './components/SwapControls';
@@ -18,7 +18,6 @@ export default function App() {
   const [pendingPool, setPendingPool] = useState<PoolState | null>(null);
   const [swapAmount, setSwapAmount] = useState(10);
   const [isSwapping, setIsSwapping] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [swapDirection, setSwapDirection] = useState<'AtoB' | 'BtoA'>('AtoB');
   const [lastSwapResult, setLastSwapResult] = useState<SwapResult | null>(null);
   const [simulationResult, setSimulationResult] = useState<{ in: number; out: number } | null>(null);
@@ -50,25 +49,20 @@ export default function App() {
     setTimeout(() => setIsSwapping(false), 1000);
   };
 
-  /* ── Simulate (step-through animation) ── */
-  const handleSimulate = () => {
-    if (swapAmount <= 0) return;
-    
-    if (isSimulating) {
-      setIsSimulating(false);
-      return;
-    }
-
-    setIsSimulating(true);
-
-    // Only set initial state if we are currently idle
-    if (animationState === 'idle') {
+  /* ── Simulation Logic (Auto-init when state enters 'sending') ── */
+  useEffect(() => {
+    if (animationState === 'sending' && !simulationResult) {
       const { newX, newY, outAmount } = calculateSwap(pool, ammType, swapAmount, swapDirection);
       setSimulationResult({ in: swapAmount, out: outAmount });
       setPendingPool({ x: newX, y: newY, k: pool.k });
-      setAnimationState('sending');
     }
-  };
+    
+    // Cleanup if someone jumps back to idle
+    if (animationState === 'idle') {
+      setSimulationResult(null);
+      setPendingPool(null);
+    }
+  }, [animationState, pool, ammType, swapAmount, swapDirection, simulationResult]);
 
   /* ── Liquidity ── */
   const handleAddLiquidity = (amountA: number, amountB: number) => {
@@ -115,14 +109,13 @@ export default function App() {
           />
         </div>
         <div className="lg:col-span-8">
-          <PriceCurveChart ammType={ammType} pool={isSimulating && pendingPool ? pendingPool : pool} previousPool={previousPool} />
+          <PriceCurveChart ammType={ammType} pool={pendingPool ? pendingPool : pool} previousPool={previousPool} />
         </div>
       </section>
 
       <section>
         <ProcessSimulation
           pool={pool}
-          isSimulating={isSimulating}
           animationState={animationState}
           swapDirection={swapDirection}
           swapAmount={swapAmount}
@@ -132,8 +125,6 @@ export default function App() {
           ammType={ammType}
           pendingPool={pendingPool}
           setAnimationState={setAnimationState}
-          setIsSimulating={setIsSimulating}
-          handleSimulate={handleSimulate}
         />
       </section>
 

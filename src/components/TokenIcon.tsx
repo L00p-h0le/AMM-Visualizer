@@ -18,21 +18,11 @@ type TokenIconProps = {
 
 function UsdcIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 48 48" className={cn('block', className)} aria-hidden="true" role="img">
-      <circle cx="24" cy="24" r="24" fill="#2775CA" />
-      <circle cx="24" cy="24" r="17" fill="none" stroke="white" strokeWidth="2.6" opacity="0.95" />
-      {/* Dollar sign S-curve */}
-      <path
-        d="M20.5 18.5c0-2.5 2-4.5 4-4.5s3.5 1.5 3.5 3.5c0 3-7.5 3-7.5 7 0 2 1.5 3.5 3.5 3.5s4-2 4-4.5"
-        fill="none"
-        stroke="white"
-        strokeWidth="2.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Vertical line through dollar sign */}
-      <line x1="24" y1="11" x2="24" y2="37" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
-      </svg>
+    <img 
+      src="/usdc-official.png" 
+      alt="USDC" 
+      className={cn('block object-contain', className)} 
+    />
   );
 }
 
