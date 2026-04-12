@@ -1,4 +1,4 @@
-import { Zap, User, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { User, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRef, useMemo } from 'react';
@@ -132,12 +132,9 @@ export const ProcessSimulation = ({
       {/* Header */}
       <div className="mb-10 px-2 text-left">
         <div className="flex items-center gap-2 mb-1">
-          <div className="p-1.5 bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
-            <Zap className="w-4 h-4 text-slate-400" />
-          </div>
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Real-time Process Simulation</h2>
         </div>
-        <p className="text-sm text-slate-400 font-medium ml-10">
+        <p className="text-sm text-slate-400 font-medium ml-2">
           Current Price · 1 {tokenA.symbol} = {(pool.y / pool.x).toFixed(4)} {tokenB.symbol}
         </p>
       </div>
@@ -279,7 +276,7 @@ export const ProcessSimulation = ({
               className="w-48 h-48 relative flex items-center justify-center z-10"
             >
               {/* Large Circular Chart */}
-              <div className="w-40 h-40 rounded-full shadow-2xl overflow-hidden border-8 border-white flex flex-col bg-slate-100">
+              <div className="w-44 h-44 rounded-full shadow-2xl overflow-hidden border-4 border-white flex flex-col bg-slate-100">
                 {/* Upper: Token A */}
                 <div className="h-1/2 w-full flex items-center justify-center relative bg-indigo-500/80">
                   <div className="flex flex-col items-center text-white">

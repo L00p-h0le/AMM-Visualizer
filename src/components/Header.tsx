@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Zap, ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { AMM_MODELS, type AMMType } from '../types/amm';
 import { useClickOutside } from '../hooks/useClickOutside';
@@ -21,8 +21,7 @@ export const Header = ({ ammType, setAmmType, resetPool }: HeaderProps) => {
   return (
     <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
-          <Zap className="text-indigo-600 w-10 h-10" />
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900">
           AMM Explorer
         </h1>
         <p className="text-slate-500 mt-1">Visualize Automated Market Maker mechanics in real-time.</p>

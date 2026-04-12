@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Zap } from 'lucide-react';
+import { Check } from 'lucide-react';
 import type { SwapResult } from '../types/amm';
 
 interface SwapToastProps {
@@ -40,7 +40,7 @@ export function SwapToast({ result, isSwapping }: SwapToastProps) {
         >
           <div className="flex items-start gap-3">
             <div className="mt-0.5 flex items-center justify-center w-8 h-8 rounded-full bg-green-100">
-              <Zap size={16} className="text-green-600" />
+              <Check size={16} className="text-green-600" />
             </div>
             <div>
               <div className="font-semibold text-green-800 text-sm">Swap Successful</div>
