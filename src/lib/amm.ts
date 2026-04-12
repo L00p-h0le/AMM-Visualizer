@@ -146,6 +146,31 @@ export function defaultPool(ammType: AMMType): PoolState {
 //  Swap calculation
 // ─────────────────────────────────────────────────────────────────
 
+export function getSpotPrice(
+  pool: PoolState,
+  ammType: AMMType,
+  swapDirection: 'AtoB' | 'BtoA',
+): number {
+  if (ammType === 'CPMM') {
+    return swapDirection === 'AtoB' ? pool.y / pool.x : pool.x / pool.y;
+  }
+  if (ammType === 'CSMM') {
+    return 1.0;
+  }
+  // StableSwap marginal price: |dy/dx| = (4A + D^3/(4x^2 y)) / (4A + D^3/(4x y^2))
+  const D = pool.k;
+  const n = 2;
+  const Ann = AMPLIFICATION * n * n; // 4A
+  const x = pool.x;
+  const y = pool.y;
+
+  const numerator = Ann + (D * D * D) / (4 * x * x * y);
+  const denominator = Ann + (D * D * D) / (4 * x * y * y);
+  const marginal = numerator / denominator;
+
+  return swapDirection === 'AtoB' ? marginal : 1 / marginal;
+}
+
 /**
  * Core swap math — pure function, no side-effects.
  *
@@ -168,13 +193,13 @@ export function calculateSwap(
 
   if (swapDirection === 'AtoB') {
     if (ammType === 'CPMM') {
-      const dy = pool.y - pool.k / (pool.x + amountWithFee);
-      newX = pool.x + amountWithFee;
+      const dy = pool.y - (pool.x * pool.y) / (pool.x + amountWithFee);
+      newX = pool.x + swapAmount;
       newY = pool.y - dy;
       outAmount = dy;
     } else if (ammType === 'CSMM') {
       const dy = Math.min(pool.y, amountWithFee);
-      newX = pool.x + amountWithFee;
+      newX = pool.x + swapAmount;
       newY = pool.y - dy;
       outAmount = dy;
     } else {
@@ -183,18 +208,18 @@ export function calculateSwap(
       const newXReserve = pool.x + amountWithFee;
       const newYReserve = stableSwapGetY(newXReserve, D, AMPLIFICATION);
       outAmount = pool.y - newYReserve;
-      newX = newXReserve;
+      newX = pool.x + swapAmount;
       newY = newYReserve;
     }
   } else {
     if (ammType === 'CPMM') {
-      const dx = pool.x - pool.k / (pool.y + amountWithFee);
-      newY = pool.y + amountWithFee;
+      const dx = pool.x - (pool.x * pool.y) / (pool.y + amountWithFee);
+      newY = pool.y + swapAmount;
       newX = pool.x - dx;
       outAmount = dx;
     } else if (ammType === 'CSMM') {
       const dx = Math.min(pool.x, amountWithFee);
-      newY = pool.y + amountWithFee;
+      newY = pool.y + swapAmount;
       newX = pool.x - dx;
       outAmount = dx;
     } else {
@@ -203,14 +228,15 @@ export function calculateSwap(
       const newYReserve = pool.y + amountWithFee;
       const newXReserve = stableSwapGetY(newYReserve, D, AMPLIFICATION);
       outAmount = pool.x - newXReserve;
-      newY = newYReserve;
+      newY = pool.y + swapAmount;
       newX = newXReserve;
     }
   }
 
-  const initialPrice = pool.y / pool.x;
-  const finalPrice = newY / newX;
-  const priceImpact = Math.abs((finalPrice - initialPrice) / initialPrice) * 100;
+  // ── Price Impact (Slippage) ──
+  const spotPrice = getSpotPrice(pool, ammType, swapDirection);
+  const idealOut = swapAmount * spotPrice * (1 - FEE_PERCENT);
+  const priceImpact = idealOut > 0 ? Math.max(0, ((idealOut - outAmount) / idealOut) * 100) : 0;
 
   return { newX, newY, outAmount, priceImpact };
 }

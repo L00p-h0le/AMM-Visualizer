@@ -29,7 +29,7 @@ export default function App() {
     const { newX, newY, outAmount } = calculateSwap(pool, ammType, swapAmount, swapDirection);
     return {
       result: { in: swapAmount, out: outAmount },
-      pendingPool: { x: newX, y: newY, k: pool.k } as PoolState,
+      pendingPool: { x: newX, y: newY, k: computeK(newX, newY, ammType) } as PoolState,
     };
   }, [animationState, pool, ammType, swapAmount, swapDirection]);
 
@@ -57,7 +57,7 @@ export default function App() {
     const { newX, newY, outAmount, priceImpact } = calculateSwap(pool, ammType, swapAmount, swapDirection);
 
     setLastSwapResult({ in: swapAmount, out: outAmount, priceImpact, fee: swapAmount * FEE_PERCENT });
-    setPool({ x: newX, y: newY, k: pool.k });
+    setPool({ x: newX, y: newY, k: computeK(newX, newY, ammType) });
     setTimeout(() => setIsSwapping(false), 1000);
   };
 

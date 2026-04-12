@@ -14,7 +14,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import type { AMMType, PoolState } from '../types/amm';
 import { Tilt } from './Animation/Tilt';
-import { AMPLIFICATION, generateStableSwapCurvePoints } from '../lib/amm';
+import { AMPLIFICATION, generateStableSwapCurvePoints, getSpotPrice, FEE_PERCENT } from '../lib/amm';
 
 /** Animated TrendingUp icon — draws in on mount */
 const AnimatedTrendingUp = () => (
@@ -59,43 +59,69 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
 
   /* ── curve data ── */
   const chartData = useMemo(() => {
+    let data: { x: number; y: number }[] = [];
+    
     if (isStableSwap) {
-      return generateStableSwapCurvePoints(pool.k, AMPLIFICATION);
-    }
+      data = generateStableSwapCurvePoints(pool.k, AMPLIFICATION);
+    } else {
+      const minX = Math.max(5, pool.x - 80);
+      const maxX = pool.x + 120;
+      const step = (maxX - minX) / 60;
 
-    const data: { x: number; y: number }[] = [];
-    const minX = Math.max(5, pool.x - 80);
-    const maxX = pool.x + 120;
-    const step = (maxX - minX) / 60;
+      for (let x = minX; x <= maxX; x += step) {
+        let y = 0;
+        if (ammType === 'CPMM') {
+          y = pool.k / x;
+        } else {
+          y = pool.k - x;
+        }
 
-    for (let x = minX; x <= maxX; x += step) {
-      let y = 0;
-      if (ammType === 'CPMM') {
-        y = pool.k / x;
-      } else {
-        y = Math.max(0, pool.k - x);
+        // Only add points that are valid (x > 0, y >= 0)
+        // Filtering y >= 0 and stopping once we hit 0 prevents the "bump" artifact
+        if (x > 0 && y >= 0) {
+          data.push({ x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) });
+          if (y === 0) break; // Stop generating points once we hit the axis
+        }
       }
-      data.push({ x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) });
     }
-    return data;
-  }, [pool, ammType, isStableSwap]);
+    
+    // Exact pool point to ensure the tooltip "locks in" on the final state
+    const injectedPoints: { x: number; y: number }[] = [
+      { x: Number(pool.x.toFixed(2)), y: Number(pool.y.toFixed(2)) }
+    ];
+
+    // Merge, deduplicate (keeping injected point first), and sort
+    return [...injectedPoints, ...data]
+      .filter((v, i, a) => a.findIndex(t => t.x === v.x) === i)
+      .sort((a, b) => a.x - b.x);
+  }, [pool, previousPool, ammType, isStableSwap]);
 
   /* ── price / slippage metrics ── */
   const metrics = useMemo(() => {
     if (!previousPool) return null;
 
-    const priceBefore = previousPool.y / previousPool.x;
-    const priceAfter  = pool.y / pool.x;
-    const priceChange = ((priceAfter - priceBefore) / priceBefore) * 100;
+    const swapDirection = pool.x > previousPool.x ? 'AtoB' : 'BtoA';
+    
+    // Use centralized logic for spot price (initial price)
+    const initialSpotPrice = getSpotPrice(previousPool, ammType, swapDirection);
+    
+    // Price change is based on MARGINAL spot price change
+    const finalSpotPrice = getSpotPrice(pool, ammType, swapDirection);
+    const priceChange = ((finalSpotPrice - initialSpotPrice) / initialSpotPrice) * 100;
 
     const deltaX = Math.abs(pool.x - previousPool.x);
     const deltaY = Math.abs(pool.y - previousPool.y);
 
-    const executionPrice = deltaX > 0 ? deltaY / deltaX : 0;
-    const slippage = Math.abs((executionPrice - priceBefore) / priceBefore) * 100;
+    // Realized execution price (output per unit of input)
+    const outAmount = swapDirection === 'AtoB' ? deltaY : deltaX;
+    const inAmount  = swapDirection === 'AtoB' ? deltaX : deltaY;
+    
+    // Slippage = realized out vs ideal out at initial spot price
+    const idealOut = inAmount * (1 - FEE_PERCENT) * initialSpotPrice;
+    const slippage = idealOut > 0 ? Math.max(0, ((idealOut - outAmount) / idealOut) * 100) : 0;
 
-    return { priceBefore, priceAfter, priceChange, deltaX, deltaY, executionPrice, slippage };
-  }, [pool, previousPool]);
+    return { priceBefore: 0, priceAfter: 0, priceChange, deltaX, deltaY, executionPrice: 0, slippage };
+  }, [pool, previousPool, ammType]);
 
   /* ── trade-impact zone bounds ── */
   const tradeZone = useMemo(() => {
@@ -161,11 +187,37 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
+                    const hoveredX = payload[0].payload.x;
+                    const hoveredY = payload[0].value as number;
+
+                    // Proximity thresholds for snapping to dots
+                    // Since step is ~3.3 in CSMM/CPMM and ~1.0 in StableSwap, 2.0 is a good threshold
+                    const threshold = isStableSwap ? 1.5 : 3.0;
+                    
+                    let displayX = hoveredX;
+                    let displayY = hoveredY;
+                    let isExactDot = false;
+                    let dotLabel = "";
+
+                    if (previousPool && Math.abs(hoveredX - previousPool.x) < threshold) {
+                      displayX = previousPool.x;
+                      displayY = previousPool.y;
+                      isExactDot = true;
+                      dotLabel = "Before";
+                    } else if (Math.abs(hoveredX - pool.x) < threshold) {
+                      displayX = pool.x;
+                      displayY = pool.y;
+                      isExactDot = true;
+                      dotLabel = currentDotLabel;
+                    }
+
                     return (
                       <div className="bg-white p-3 rounded-lg shadow-xl border border-slate-200 text-xs text-slate-600">
-                        <p className="font-bold text-indigo-600 mb-1">Pool State</p>
-                        <p>A (x): <span className="font-mono">{payload[0].payload.x}</span></p>
-                        <p>B (y): <span className="font-mono">{payload[0].value}</span></p>
+                        <p className={`font-bold mb-1 ${isExactDot ? 'text-indigo-600' : 'text-slate-400 font-mono'}`}>
+                          {isExactDot ? `Pool State (${dotLabel})` : 'Theoretical State'}
+                        </p>
+                        <p>A (x): <span className="font-mono">{displayX.toFixed(2)}</span></p>
+                        <p>B (y): <span className="font-mono">{displayY.toFixed(2)}</span></p>
                       </div>
                     );
                   }

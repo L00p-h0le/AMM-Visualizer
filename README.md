@@ -11,6 +11,11 @@ A frontend-only AMM education app that turns swap mechanics into a guided visual
 - Provides a real-time process simulation with stepper controls for input, calculation, output, and rebalance stages
 - Includes reusable interaction components for the swap panel, token selector, toast, and liquidity modal
 
+## Recent updates
+
+- Refined the AMM math and StableSwap visualization so the curve and reserve changes are more accurate and easier to read.
+- Updated the process simulation experience to keep the swap flow clear while preserving a clean, educational layout.
+
 ## Current UX direction
 
 The current frontend is built as a polished educational dashboard with:
