@@ -110,7 +110,7 @@ export const AnimatedBeam = ({
 
   // Spawn tokens when transferring with organic jitter
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: any;
     let isActive = true;
     const startTime = Date.now();
     const spawnDuration = 3000;
@@ -124,6 +124,10 @@ export const AnimatedBeam = ({
       const nextSpawnDelay = 350 + Math.random() * 300;
       timeoutId = setTimeout(spawnToken, nextSpawnDelay);
     };
+
+    if (!isTransferring) {
+      setTokens([]);
+    }
 
     if (isTransferring) {
       spawnToken();

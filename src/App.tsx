@@ -42,6 +42,7 @@ export default function App() {
     setPool(defaultPool(type));
     setLastSwapResult(null);
     setPreviousPool(null);
+    setAnimationState('idle');
   };
 
   const handleSetTokenA = (t: Token) => { setTokenA(t); resetPool(); };

@@ -64,10 +64,15 @@ export const ProcessSimulation = ({
   const explanations = useMemo<Record<string, { tooltip: string; math: string | React.ReactNode }>>(() => ({
     idle: {
       tooltip: `Wallet is ready to send ${swapAmount} ${inputToken.symbol}.`,
-      math: `x * y = k`,
+      math:
+        ammType === 'CPMM'
+          ? 'x * y = k'
+          : ammType === 'CSMM'
+          ? 'x + y = k'
+          : 'f(x,y) = D',
     },
     sending: {
-      tooltip: `Preparing to transfer ${swapAmount} ${inputToken.symbol} from the user wallet.`,
+      tooltip: `Transferring ${swapAmount} ${inputToken.symbol} from the user wallet.`,
       math: (
         <div className="flex flex-col items-center">
           <span className="text-xs text-slate-400">Receiving Input</span>
@@ -79,13 +84,25 @@ export const ProcessSimulation = ({
       tooltip: `Wallet has already submitted ${inputToken.symbol}. The contract is now computing the quote.`,
       math: (
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[10px] text-slate-400 font-mono">(x + Δx)(y - Δy) = k</span>
+          <span className="text-[10px] text-slate-400 font-mono">
+            {ammType === 'CPMM'
+              ? '(x + \u0394x)(y - \u0394y) = k'
+              : ammType === 'CSMM'
+              ? '(x + \u0394x) + (y - \u0394y) = k'
+              : 'f(x+\u0394x, y-\u0394y) = D'}
+          </span>
           <motion.span
             initial={{ opacity: 0 }}
             animate={{ opacity: currentIndex >= 2 ? 1 : 0 }}
-            className="font-mono text-indigo-600 text-sm"
+            className="font-mono text-indigo-600 text-[11px] text-center"
           >
-            Δy = y - k/(x+Δx)
+            {ammType === 'CPMM' ? (
+              '\u0394y = y - k/(x+\u0394x)'
+            ) : ammType === 'CSMM' ? (
+              '\u0394y = \u0394x'
+            ) : (
+              <span className="text-[9px]">Iterative Solv: \u0394y = y - y_new</span>
+            )}
           </motion.span>
         </div>
       ),
@@ -110,7 +127,13 @@ export const ProcessSimulation = ({
         </div>
       ),
     },
-  }), [swapAmount, inputToken.symbol, outputToken.symbol, currentIndex, simulationResult, pendingPool, pool.x, pool.y, tokenA.symbol, tokenB.symbol]);
+  }), [swapAmount, inputToken.symbol, outputToken.symbol, currentIndex, simulationResult, pendingPool, pool.x, pool.y, tokenA.symbol, tokenB.symbol, ammType]);
+
+  const poolTooltips = useMemo<Record<string, string>>(() => ({
+    sending: `Receiving ${swapAmount} ${inputToken.symbol} from the User`,
+    receiving: `Transferring ${(simulationResult?.out || 0).toFixed(4)} ${outputToken.symbol} back to the User`,
+    balancing: `Updated reserves`,
+  }), [swapAmount, inputToken.symbol, outputToken.symbol, simulationResult]);
 
   const current = explanations[animationState];
 
@@ -270,10 +293,30 @@ export const ProcessSimulation = ({
 
           {/* LIQUIDITY POOL */}
           <div className="flex flex-col items-center">
-            <div className="h-20 mb-4" /> {/* Empty spacer to maintain row alignment */}
+            {/* Tooltip bubble - Pool Context (Steps 1, 3, 4) */}
+            <div className="h-20 mb-4 flex items-end">
+              <AnimatePresence mode="wait">
+                {['sending', 'receiving', 'balancing'].includes(animationState) && (
+                  <motion.div
+                    key={animationState}
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                    className="bg-white p-4 rounded-xl shadow-lg border border-slate-100 relative text-[11px] text-slate-500 leading-relaxed font-medium max-w-[150px] text-center"
+                  >
+                    {poolTooltips[animationState]}
+                    {/* Bubble Tail */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-slate-100 rotate-45 -mt-1.5 shadow-[2px_2px_2px_rgba(0,0,0,0.02)]" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <div
               ref={poolRef}
-              className="w-48 h-48 relative flex items-center justify-center z-10"
+              className={cn(
+                "w-44 h-44 relative flex items-center justify-center z-10 transition-all duration-500 rounded-full",
+                currentIndex === 3 ? "ring-2 ring-indigo-400 scale-[1.02]" : "ring-transparent"
+              )}
             >
               {/* Large Circular Chart */}
               <div className="w-44 h-44 rounded-full shadow-2xl overflow-hidden border-4 border-white flex flex-col bg-slate-100">
