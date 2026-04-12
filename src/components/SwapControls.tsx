@@ -134,7 +134,7 @@ export const SwapControls = ({
                       label="You Receive (Est.)"
                       value={
                         swapAmount > 0
-                          ? calculateSwap(pool, ammType, swapAmount, swapDirection).outAmount.toFixed(4)
+                          ? calculateSwap(pool, ammType, swapAmount, swapDirection).out.toFixed(4)
                           : '0.0000'
                       }
                       readOnly

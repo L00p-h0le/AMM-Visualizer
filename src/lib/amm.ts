@@ -238,6 +238,21 @@ export function calculateSwap(
   const idealOut = swapAmount * spotPrice * (1 - FEE_PERCENT);
   const priceImpact = idealOut > 0 ? Math.max(0, ((idealOut - outAmount) / idealOut) * 100) : 0;
 
-  return { newX, newY, outAmount, priceImpact };
+  // ── Invariant Growth (Educational) ──
+  const kBefore = pool.k;
+  const kAfter = computeK(newX, newY, ammType);
+  const invariantName = ammType === 'StableSwap' ? 'D' : 'k';
+
+  return {
+    newX,
+    newY,
+    in: swapAmount,
+    out: outAmount,
+    priceImpact,
+    fee: swapAmount * FEE_PERCENT,
+    kBefore,
+    kAfter,
+    invariantName
+  };
 }
 

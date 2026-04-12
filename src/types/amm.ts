@@ -18,6 +18,10 @@ export interface SwapResult {
   out: number;
   priceImpact: number;
   fee: number;
+  // Educational metrics
+  kBefore: number;
+  kAfter: number;
+  invariantName: string;
 }
 
 export const TOKENS: Token[] = [

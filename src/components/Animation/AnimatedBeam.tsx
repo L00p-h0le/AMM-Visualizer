@@ -83,6 +83,24 @@ export const AnimatedBeam = ({
   const [path, setPath] = useState("");
   const pathRef = useRef<SVGPathElement>(null);
   const [tokens, setTokens] = useState<{ id: number }[]>([]);
+  const [delayedShow, setDelayedShow] = useState(false);
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+    if (isTransferring) {
+      setDelayedShow(true);
+      // Spawning phase is 3s. Vanish 1s after completion -> 4s total
+      timeout = setTimeout(() => {
+        setDelayedShow(false);
+      }, 4000);
+    } else {
+      setDelayedShow(false);
+    }
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [isTransferring]);
+
 
   useEffect(() => {
     const updatePath = () => {
@@ -166,7 +184,7 @@ export const AnimatedBeam = ({
         strokeWidth="4"
         strokeLinecap="round"
         initial={{ pathLength: 0, opacity: 0 }}
-        animate={isTransferring ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+        animate={delayedShow ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
         transition={{ duration: 0.8, ease: "easeInOut" }}
       />
 
@@ -190,9 +208,11 @@ export const AnimatedBeam = ({
           x2="100%"
           y2="0%"
         >
-          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0" />
-          <stop offset="50%" stopColor="#10b981" stopOpacity="1" />
-          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+          <stop offset="0%" stopColor="#6366f1" stopOpacity="0" />
+          <stop offset="30%" stopColor="#a855f7" stopOpacity="0.8" />
+          <stop offset="50%" stopColor="#ec4899" stopOpacity="1" />
+          <stop offset="70%" stopColor="#a855f7" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
         </linearGradient>
       </defs>
     </svg>
