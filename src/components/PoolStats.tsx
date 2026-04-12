@@ -60,8 +60,8 @@ export const PoolStats = ({
   };
 
   return (
-    <Tilt rotationFactor={4} isRevese className="h-full w-full">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6 h-full flex flex-col justify-center">
+    <Tilt rotationFactor={4} isRevese className="w-full">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6 flex flex-col justify-center">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -131,9 +131,11 @@ export const PoolStats = ({
               1 {tokenA.symbol} = {currentPrice} {tokenB.symbol}
             </span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-slate-500">Constant (k)</span>
-            <span className="font-mono font-semibold text-slate-700">
+          <div className="flex justify-between items-center px-1">
+            <span className="text-sm text-slate-500 font-medium">
+              {ammType === 'StableSwap' ? 'Invariant (D)' : 'Constant (k)'}
+            </span>
+            <span className="font-mono font-bold text-slate-800">
               {pool.k.toLocaleString()}
             </span>
           </div>

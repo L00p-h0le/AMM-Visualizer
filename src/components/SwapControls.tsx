@@ -58,8 +58,8 @@ export const SwapControls = ({
   const toToken = swapDirection === 'AtoB' ? tokenB : tokenA;
 
   return (
-    <Tilt rotationFactor={4} isRevese className="h-full w-full">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-full">
+    <Tilt rotationFactor={4} isRevese className="w-full">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Tabs */}
         <div className="flex relative border-b border-slate-100">
           {(['swap', 'liquidity'] as const).map((tab) => (
