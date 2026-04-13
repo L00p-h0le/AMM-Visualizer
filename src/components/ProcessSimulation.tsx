@@ -68,8 +68,8 @@ export const ProcessSimulation = ({
         ammType === 'CPMM'
           ? 'x * y = k'
           : ammType === 'CSMM'
-          ? 'x + y = k'
-          : 'f(x,y) = D',
+            ? 'x + y = k'
+            : 'f(x,y) = D',
     },
     sending: {
       tooltip: `Transferring ${swapAmount} ${inputToken.symbol} from the user wallet.`,
@@ -88,8 +88,8 @@ export const ProcessSimulation = ({
             {ammType === 'CPMM'
               ? '(x + \u0394x)(y - \u0394y) = k'
               : ammType === 'CSMM'
-              ? '(x + \u0394x) + (y - \u0394y) = k'
-              : 'f(x+\u0394x, y-\u0394y) = D'}
+                ? '(x + \u0394x) + (y - \u0394y) = k'
+                : 'f(x+\u0394x, y-\u0394y) = D'}
           </span>
           <motion.span
             initial={{ opacity: 0 }}
@@ -151,13 +151,13 @@ export const ProcessSimulation = ({
   const poolRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[calc(100vh-6rem)] flex flex-col">
+    <div className="bg-[#13111C] p-6 md:p-8 rounded-3xl shadow-2xl border border-white/5 min-h-[calc(100vh-6rem)] flex flex-col">
       {/* Header */}
       <div className="mb-10 px-2 text-left">
         <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Real-time Process Simulation</h2>
+          <h2 className="text-2xl font-bold text-white/90 tracking-tight">Real-time Process Simulation</h2>
         </div>
-        <p className="text-sm text-slate-400 font-medium ml-2">
+        <p className="text-sm text-white/50 font-medium ml-2">
           Current Price · 1 {tokenA.symbol} = {(pool.y / pool.x).toFixed(4)} {tokenB.symbol}
         </p>
       </div>
@@ -165,7 +165,7 @@ export const ProcessSimulation = ({
       {/* Main Stage */}
       <div
         ref={stageRef}
-        className="flex-1 relative bg-slate-50/50 rounded-[2.5rem] border border-slate-100/80 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)] flex flex-col items-center justify-center p-8 min-h-[500px]"
+        className="flex-1 relative bg-black/20 rounded-[2.5rem] border border-white/10 shadow-[inner_0_2px_10px_rgba(255,255,255,0.02)] flex flex-col items-center justify-center p-8 min-h-[500px]"
       >
         {/* Animated Beams */}
         <AnimatedBeam
@@ -187,8 +187,8 @@ export const ProcessSimulation = ({
 
         {/* Step Indicator */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 -ml-[19px]">
-          <div className="px-3 py-0.5 bg-white border border-slate-200 rounded-full shadow-sm flex items-center justify-center">
-            <span className="text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase leading-none">{stepLabels[animationState]}</span>
+          <div className="px-3 py-0.5 bg-[#1a1a1a] border border-white/10 rounded-full shadow-sm flex items-center justify-center">
+            <span className="text-[10px] font-bold text-white/50 tracking-[0.2em] uppercase leading-none">{stepLabels[animationState]}</span>
           </div>
         </div>
 
@@ -206,11 +206,11 @@ export const ProcessSimulation = ({
                     initial={{ opacity: 0, scale: 0.9, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                    className="bg-white p-4 rounded-xl shadow-lg border border-slate-100 relative text-[11px] text-slate-500 leading-relaxed font-medium max-w-[150px]"
+                    className="bg-[#1a1a1a]/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/10 relative text-[11px] text-white/70 leading-relaxed font-medium max-w-[150px]"
                   >
                     {explanations[animationState].tooltip}
                     {/* Bubble Tail */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-slate-100 rotate-45 -mt-1.5 shadow-[2px_2px_2px_rgba(0,0,0,0.02)]" />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1a1a1a] border-r border-b border-white/10 rotate-45 -mt-1.5" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -220,30 +220,30 @@ export const ProcessSimulation = ({
             <div
               ref={walletRef}
               className={cn(
-                "w-40 h-52 bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] p-5 flex flex-col items-center gap-4 transition-all duration-500 border-2 z-10",
-                currentIndex === 1 ? "border-indigo-400 scale-[1.02]" : "border-transparent"
+                "w-40 h-52 bg-white/[0.04] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] p-5 flex flex-col items-center gap-4 transition-all duration-500 z-10",
+                currentIndex === 1 ? "ring-2 ring-purple-400 scale-[1.02]" : ""
               )}
             >
-              <div className="w-14 h-14 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200">
+              <div className="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/40">
                 <User className="w-7 h-7 text-white" />
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-xl font-bold text-slate-900 tracking-tight mt-2">
+                <span className="text-xl font-bold text-white/90 tracking-tight mt-2">
                   {animationState === 'idle' ? swapAmount : displayWalletBalance} {inputToken.symbol}
                 </span>
               </div>
-              <div className="w-full pt-4 border-t border-slate-50 flex flex-col gap-1">
+              <div className="w-full pt-4 border-t border-white/10 flex flex-col gap-1">
                 <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-slate-400">Send</span>
-                  <span className="font-bold text-slate-900">{swapAmount} {inputToken.symbol}</span>
+                  <span className="text-white/50">Send</span>
+                  <span className="font-bold text-white/90">{swapAmount} {inputToken.symbol}</span>
                 </div>
                 <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-slate-400">Receive</span>
-                  <span className="font-bold text-slate-900">{displayReceiveValue.toFixed(4)} {outputToken.symbol}</span>
+                  <span className="text-white/50">Receive</span>
+                  <span className="font-bold text-white/90">{displayReceiveValue.toFixed(4)} {outputToken.symbol}</span>
                 </div>
               </div>
             </div>
-            <span className="mt-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">USER WALLET</span>
+            <span className="mt-4 text-[11px] font-bold text-white/30 uppercase tracking-[0.15em]">USER WALLET</span>
           </div>
 
           {/* AMM MODEL */}
@@ -257,24 +257,24 @@ export const ProcessSimulation = ({
                     initial={{ opacity: 0, scale: 0.9, x: 20, y: 10 }}
                     animate={{ opacity: 1, scale: 1, x: -25, y: -10 }}
                     exit={{ opacity: 0, scale: 0.9, x: 20, y: 10 }}
-                    className="absolute bottom-full left-0 -translate-x-[60%] bg-white p-4 rounded-xl shadow-lg border border-slate-100 text-[11px] text-slate-500 leading-relaxed font-medium w-[170px] z-20 mb-1"
+                    className="absolute bottom-full left-0 -translate-x-[60%] bg-[#1a1a1a]/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/10 text-[11px] text-white/70 leading-relaxed font-medium w-[170px] z-20 mb-1"
                   >
                     {current.tooltip}
                     {/* Bubble Tail */}
-                    <div className="absolute top-full right-6 w-3 h-3 bg-white border-r border-b border-slate-100 rotate-45 -mt-1.5 shadow-[2px_2px_2px_rgba(0,0,0,0.02)]" />
+                    <div className="absolute top-full right-6 w-3 h-3 bg-[#1a1a1a] border-r border-b border-white/10 rotate-45 -mt-1.5" />
                   </motion.div>
                 )}
               </AnimatePresence>
               <div
                 className={cn(
-                  "w-44 h-56 bg-white rounded-3xl shadow-[0_10px_30px_-10px_rgba(0,0,0,0.08)] flex flex-col p-6 items-center gap-4 transition-all duration-500 border-2 z-10",
-                  currentIndex === 2 ? "border-indigo-400 scale-[1.02]" : "border-transparent"
+                  "w-44 h-56 bg-white/[0.04] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] flex flex-col p-6 items-center gap-4 transition-all duration-500 z-10",
+                  currentIndex === 2 ? "ring-2 ring-purple-400 scale-[1.02]" : ""
                 )}
               >
-                <span className="text-2xl font-black text-slate-800 tracking-tighter mt-4">{ammType}</span>
+                <span className="text-2xl font-black text-white/90 tracking-tighter mt-4">{ammType}</span>
 
                 {/* Math Display Area */}
-                <div className="flex-1 w-full bg-slate-50/50 rounded-2xl flex items-center justify-center border border-slate-100/50 overflow-hidden">
+                <div className="flex-1 w-full bg-black/40 rounded-2xl flex items-center justify-center border border-white/10 overflow-hidden">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={animationState}
@@ -302,11 +302,11 @@ export const ProcessSimulation = ({
                     initial={{ opacity: 0, scale: 0.9, y: 10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                    className="bg-white p-4 rounded-xl shadow-lg border border-slate-100 relative text-[11px] text-slate-500 leading-relaxed font-medium max-w-[150px] text-center"
+                    className="bg-[#1a1a1a]/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/10 relative text-[11px] text-white/70 leading-relaxed font-medium max-w-[150px] text-center"
                   >
                     {poolTooltips[animationState]}
                     {/* Bubble Tail */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-slate-100 rotate-45 -mt-1.5 shadow-[2px_2px_2px_rgba(0,0,0,0.02)]" />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1a1a1a] border-r border-b border-white/10 rotate-45 -mt-1.5" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -315,20 +315,20 @@ export const ProcessSimulation = ({
               ref={poolRef}
               className={cn(
                 "w-44 h-44 relative flex items-center justify-center z-10 transition-all duration-500 rounded-full",
-                currentIndex === 3 ? "ring-2 ring-indigo-400 scale-[1.02]" : "ring-transparent"
+                currentIndex === 3 ? "ring-2 ring-purple-400 scale-[1.02]" : "ring-transparent"
               )}
             >
               {/* Large Circular Chart */}
-              <div className="w-44 h-44 rounded-full shadow-2xl overflow-hidden border-4 border-white flex flex-col bg-slate-100">
+              <div className="w-44 h-44 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden border-4 border-[#1a1a1a] flex flex-col bg-[#0a0a0a]">
                 {/* Upper: Token A */}
-                <div className="h-1/2 w-full flex items-center justify-center relative bg-indigo-500/80">
+                <div className="h-1/2 w-full flex items-center justify-center relative bg-purple-500/80">
                   <div className="flex flex-col items-center text-white">
                     <span className="text-[10px] font-bold text-white/70 uppercase">{tokenA.symbol}</span>
                     <span className="text-xs font-bold">{displayPoolX.toFixed(2)}</span>
                   </div>
                 </div>
                 {/* Lower: Token B */}
-                <div className="h-1/2 w-full flex items-center justify-center bg-blue-400/80">
+                <div className="h-1/2 w-full flex items-center justify-center bg-fuchsia-400/80">
                   <div className="flex flex-col items-center text-white">
                     <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{tokenB.symbol}</span>
                     <span className="text-xs font-bold">{displayPoolY.toFixed(2)}</span>
@@ -336,7 +336,7 @@ export const ProcessSimulation = ({
                 </div>
               </div>
             </div>
-            <span className="mt-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">LIQUIDITY POOL</span>
+            <span className="mt-4 text-[11px] font-bold text-white/30 uppercase tracking-[0.15em]">LIQUIDITY POOL</span>
           </div>
 
         </div>
@@ -346,14 +346,14 @@ export const ProcessSimulation = ({
           <button
             onClick={prevStep}
             disabled={currentIndex === 0}
-            className="w-10 h-10 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all disabled:opacity-30 group"
+            className="w-10 h-10 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-sm flex items-center justify-center text-white/50 hover:text-purple-400 hover:border-purple-400/50 hover:bg-white/10 transition-all disabled:opacity-30 group"
           >
             <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
           </button>
 
           <button
             onClick={nextStep}
-            className="w-10 h-10 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all group"
+            className="w-10 h-10 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-sm flex items-center justify-center text-white/50 hover:text-purple-400 hover:border-purple-400/50 hover:bg-white/10 transition-all group"
           >
             {currentIndex === sequence.length - 1 ? (
               <RotateCcw className="w-5 h-5 transition-transform group-hover:rotate-[-45deg]" />

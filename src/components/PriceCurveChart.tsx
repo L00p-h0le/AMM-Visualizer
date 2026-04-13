@@ -28,7 +28,7 @@ const AnimatedTrendingUp = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="text-indigo-500"
+    className="text-purple-400"
   >
     <motion.polyline
       points="22 7 13.5 15.5 8.5 10.5 2 17"
@@ -60,7 +60,7 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
   /* ── curve data ── */
   const chartData = useMemo(() => {
     let data: { x: number; y: number }[] = [];
-    
+
     if (isStableSwap) {
       data = generateStableSwapCurvePoints(pool.k, AMPLIFICATION);
     } else {
@@ -84,7 +84,7 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
         }
       }
     }
-    
+
     // Exact pool point to ensure the tooltip "locks in" on the final state
     const injectedPoints: { x: number; y: number }[] = [
       { x: Number(pool.x.toFixed(2)), y: Number(pool.y.toFixed(2)) }
@@ -101,10 +101,10 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
     if (!previousPool) return null;
 
     const swapDirection = pool.x > previousPool.x ? 'AtoB' : 'BtoA';
-    
+
     // Use centralized logic for spot price (initial price)
     const initialSpotPrice = getSpotPrice(previousPool, ammType, swapDirection);
-    
+
     // Price change is based on MARGINAL spot price change
     const finalSpotPrice = getSpotPrice(pool, ammType, swapDirection);
     const priceChange = ((finalSpotPrice - initialSpotPrice) / initialSpotPrice) * 100;
@@ -114,8 +114,8 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
 
     // Realized execution price (output per unit of input)
     const outAmount = swapDirection === 'AtoB' ? deltaY : deltaX;
-    const inAmount  = swapDirection === 'AtoB' ? deltaX : deltaY;
-    
+    const inAmount = swapDirection === 'AtoB' ? deltaX : deltaY;
+
     // Slippage = realized out vs ideal out at initial spot price
     const idealOut = inAmount * (1 - FEE_PERCENT) * initialSpotPrice;
     const slippage = idealOut > 0 ? Math.max(0, ((idealOut - outAmount) / idealOut) * 100) : 0;
@@ -145,7 +145,7 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
 
   return (
     <Tilt rotationFactor={4} isRevese className="h-full w-full">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-full min-h-[500px] flex flex-col">
+      <div className="bg-[#13111C] p-6 rounded-2xl shadow-2xl border border-white/5 h-full min-h-[500px] flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6 shrink-0">
@@ -153,7 +153,7 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
             <AnimatedTrendingUp />
             Price Curve Visualization
           </h2>
-          <div className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-1 rounded">
+          <div className="text-xs font-mono text-white/50 bg-white/5 border border-white/10 px-2 py-1 rounded">
             {formulaLabel}
           </div>
         </div>
@@ -171,7 +171,7 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
             {...(isStableSwap ? { aspect: 1 } : { height: '100%' })}
           >
             <LineChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff" strokeOpacity={0.05} />
               <XAxis
                 dataKey="x"
                 type="number"
@@ -193,7 +193,7 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
                     // Proximity thresholds for snapping to dots
                     // Since step is ~3.3 in CSMM/CPMM and ~1.0 in StableSwap, 2.0 is a good threshold
                     const threshold = isStableSwap ? 1.5 : 3.0;
-                    
+
                     let displayX = hoveredX;
                     let displayY = hoveredY;
                     let isExactDot = false;
@@ -212,8 +212,8 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
                     }
 
                     return (
-                      <div className="bg-white p-3 rounded-lg shadow-xl border border-slate-200 text-xs text-slate-600">
-                        <p className={`font-bold mb-1 ${isExactDot ? 'text-indigo-600' : 'text-slate-400 font-mono'}`}>
+                      <div className="bg-[#1a1a1a]/95 backdrop-blur-md p-3 rounded-lg shadow-xl border border-white/10 text-xs text-white/90">
+                        <p className={`font-bold mb-1 ${isExactDot ? 'text-purple-400' : 'text-white/50 font-mono'}`}>
                           {isExactDot ? `Pool State (${dotLabel})` : 'Theoretical State'}
                         </p>
                         <p>A (x): <span className="font-mono">{displayX.toFixed(2)}</span></p>
@@ -262,7 +262,7 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
                   y={previousPool.y}
                   r={7}
                   fill="#94a3b8"
-                  stroke="#fff"
+                  stroke="#1a1a1a"
                   strokeWidth={2}
                   label={{ value: 'Before', position: 'top', fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
                 />
@@ -272,10 +272,10 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
                 x={pool.x}
                 y={pool.y}
                 r={previousPool ? 9 : 8}
-                fill="#4f46e5"
-                stroke="#fff"
+                fill="#a855f7"
+                stroke="#1a1a1a"
                 strokeWidth={3}
-                label={{ value: currentDotLabel, position: 'bottom', fontSize: 10, fill: '#4f46e5', fontWeight: 600 }}
+                label={{ value: currentDotLabel, position: 'bottom', fontSize: 10, fill: '#a855f7', fontWeight: 600 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -290,65 +290,63 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
                 transition={{ duration: 0.5, ease: 'easeOut' }}
                 className="absolute top-3 right-3 z-10"
               >
-                <div className="bg-white/95 backdrop-blur-sm rounded-xl border border-slate-200 shadow-lg px-4 py-3 space-y-2 min-w-[210px]">
+                <div className="bg-[#1a1a1a]/90 backdrop-blur-md rounded-xl border border-white/10 shadow-lg px-4 py-3 space-y-2 min-w-[210px]">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-[11px]">
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1 }}
                         className="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0" />
-                      <span className="text-slate-500">Before: <span className="font-mono font-semibold">{previousPool.x.toFixed(1)}, {previousPool.y.toFixed(1)}</span></span>
+                      <span className="text-white/50">Before: <span className="font-mono font-semibold text-white/90">{previousPool.x.toFixed(1)}, {previousPool.y.toFixed(1)}</span></span>
                     </div>
                     <div className="flex items-center gap-2 text-[11px]">
                       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}
-                        className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0 ring-1 ring-indigo-200" />
-                      <span className="text-slate-500">After: <span className="font-mono font-semibold">{pool.x.toFixed(1)}, {pool.y.toFixed(1)}</span></span>
+                        className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0 ring-1 ring-purple-400/30" />
+                      <span className="text-white/50">After: <span className="font-mono font-semibold text-white/90">{pool.x.toFixed(1)}, {pool.y.toFixed(1)}</span></span>
                     </div>
                   </div>
 
-                  <div className="border-t border-slate-100 pt-2 space-y-1.5">
+                  <div className="border-t border-white/10 pt-2 space-y-1.5">
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
                       className="flex justify-between text-[11px]">
-                      <span className="text-slate-400">Price Change</span>
-                      <span className={`font-mono font-bold ${metrics.priceChange >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      <span className="text-white/50">Price Change</span>
+                      <span className={`font-mono font-bold ${metrics.priceChange >= 0 ? 'text-green-500' : 'text-red-400'}`}>
                         {metrics.priceChange >= 0 ? '+' : ''}{metrics.priceChange.toFixed(2)}%
                       </span>
                     </motion.div>
 
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}
                       className="flex justify-between text-[11px]">
-                      <span className="text-slate-400">Slippage</span>
-                      <span className={`font-mono font-bold ${
-                        metrics.slippage > 1 ? 'text-red-500' : metrics.slippage > 0.5 ? 'text-amber-500' : 'text-green-600'
-                      }`}>
+                      <span className="text-white/50">Slippage</span>
+                      <span className={`font-mono font-bold ${metrics.slippage > 1 ? 'text-red-400' : metrics.slippage > 0.5 ? 'text-amber-400' : 'text-green-500'
+                        }`}>
                         {metrics.slippage.toFixed(3)}%
                       </span>
                     </motion.div>
 
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}
                       className="flex justify-between text-[11px]">
-                      <span className="text-slate-400">{'\u0394'}A</span>
-                      <span className="font-mono font-semibold text-slate-600">
+                      <span className="text-white/50">{'\u0394'}A</span>
+                      <span className="font-mono font-semibold text-white/90">
                         {pool.x > previousPool.x ? '+' : ''}{(pool.x - previousPool.x).toFixed(2)}
                       </span>
                     </motion.div>
                     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.55 }}
                       className="flex justify-between text-[11px]">
-                      <span className="text-slate-400">{'\u0394'}B</span>
-                      <span className="font-mono font-semibold text-slate-600">
+                      <span className="text-white/50">{'\u0394'}B</span>
+                      <span className="font-mono font-semibold text-white/90">
                         {pool.y > previousPool.y ? '+' : ''}{(pool.y - previousPool.y).toFixed(2)}
                       </span>
                     </motion.div>
                   </div>
 
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="pt-1">
-                    <div className="text-[10px] text-slate-400 mb-1">Slippage Impact</div>
-                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="text-[10px] text-white/50 mb-1">Slippage Impact</div>
+                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${Math.min(metrics.slippage * 10, 100)}%` }}
                         transition={{ duration: 0.8, delay: 0.7, ease: 'easeOut' }}
-                        className={`h-full rounded-full ${
-                          metrics.slippage > 1 ? 'bg-red-400' : metrics.slippage > 0.5 ? 'bg-amber-400' : 'bg-green-400'
-                        }`}
+                        className={`h-full rounded-full ${metrics.slippage > 1 ? 'bg-red-400' : metrics.slippage > 0.5 ? 'bg-amber-400' : 'bg-green-400'
+                          }`}
                       />
                     </div>
                   </motion.div>

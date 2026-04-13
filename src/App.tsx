@@ -7,8 +7,24 @@ import { ProcessSimulation } from './components/ProcessSimulation';
 import { EducationalSection } from './components/EducationalSection';
 import { TOKENS, type AMMType, type PoolState, type Token, type SwapResult } from './types/amm';
 import { calculateSwap, computeK, defaultPool } from './lib/amm';
+import FloatingLines from './components/FloatingLines';
+import Lenis from 'lenis';
+import { useEffect } from 'react';
+
+const ENABLED_WAVES = ["top", "middle", "bottom"] as const;
 
 export default function App() {
+  /* ── Smooth Scrolling ── */
+  useEffect(() => {
+    const lenis = new Lenis();
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+    return () => lenis.destroy();
+  }, []);
+
   /* ── State ── */
   const [ammType, setAmmType] = useState<AMMType>('CPMM');
   const [tokenA, setTokenA] = useState<Token>(TOKENS[0]);
@@ -74,70 +90,90 @@ export default function App() {
 
   /* ── Render ── */
   return (
-    <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-12">
-      <Header ammType={ammType} setAmmType={setAmmType} resetPool={resetPool} />
+    <div className="dark relative min-h-screen bg-[#030303] text-white/90 selection:bg-purple-500/30">
 
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        <div className="lg:col-span-4 flex flex-col gap-6 min-h-0">
-          <PoolStats
+      {/* Background layer */}
+      <div style={{
+        position: 'fixed',  // fixed so it stays while scrolling
+        inset: 0,
+        zIndex: 0,
+        pointerEvents: 'none'  // so it doesn't block clicks
+      }}>
+        <FloatingLines
+          enabledWaves={ENABLED_WAVES as any}
+          lineCount={5}
+          lineDistance={5}
+          bendRadius={5}
+          bendStrength={-0.5}
+          interactive={true}
+          parallax={true}
+        />
+      </div>
+      <div style={{ position: 'relative', zIndex: 1 }} className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto space-y-12">
+        <Header ammType={ammType} setAmmType={setAmmType} resetPool={resetPool} />
+
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          <div className="lg:col-span-4 flex flex-col gap-6 min-h-0">
+            <PoolStats
+              pool={pool}
+              ammType={ammType}
+              tokenA={tokenA}
+              tokenB={tokenB}
+              setTokenA={handleSetTokenA}
+              setTokenB={handleSetTokenB}
+              setPool={setPool}
+              currentPrice={currentPrice}
+              resetPool={() => resetPool()}
+            />
+            <SwapControls
+              ammType={ammType}
+              pool={pool}
+              tokenA={tokenA}
+              tokenB={tokenB}
+              swapAmount={swapAmount}
+              setSwapAmount={setSwapAmount}
+              swapDirection={swapDirection}
+              setSwapDirection={setSwapDirection}
+              isSwapping={isSwapping}
+              lastSwapResult={lastSwapResult}
+              handleSwap={handleSwap}
+              handleAddLiquidity={handleAddLiquidity}
+            />
+          </div>
+          <div className="lg:col-span-8">
+            <PriceCurveChart ammType={ammType} pool={pendingPool ? pendingPool : pool} previousPool={previousPool} />
+          </div>
+        </section>
+
+        <section>
+          <ProcessSimulation
             pool={pool}
-            ammType={ammType}
-            tokenA={tokenA}
-            tokenB={tokenB}
-            setTokenA={handleSetTokenA}
-            setTokenB={handleSetTokenB}
-            setPool={setPool}
-            currentPrice={currentPrice}
-            resetPool={() => resetPool()}
-          />
-          <SwapControls
-            ammType={ammType}
-            pool={pool}
-            tokenA={tokenA}
-            tokenB={tokenB}
-            swapAmount={swapAmount}
-            setSwapAmount={setSwapAmount}
+            animationState={animationState}
             swapDirection={swapDirection}
-            setSwapDirection={setSwapDirection}
-            isSwapping={isSwapping}
-            lastSwapResult={lastSwapResult}
-            handleSwap={handleSwap}
-            handleAddLiquidity={handleAddLiquidity}
+            swapAmount={swapAmount}
+            tokenA={tokenA}
+            tokenB={tokenB}
+            simulationResult={simulationResult}
+            ammType={ammType}
+            pendingPool={pendingPool}
+            setAnimationState={setAnimationState}
           />
-        </div>
-        <div className="lg:col-span-8">
-          <PriceCurveChart ammType={ammType} pool={pendingPool ? pendingPool : pool} previousPool={previousPool} />
-        </div>
-      </section>
+        </section>
 
-      <section>
-        <ProcessSimulation
-          pool={pool}
-          animationState={animationState}
-          swapDirection={swapDirection}
-          swapAmount={swapAmount}
-          tokenA={tokenA}
-          tokenB={tokenB}
-          simulationResult={simulationResult}
-          ammType={ammType}
-          pendingPool={pendingPool}
-          setAnimationState={setAnimationState}
-        />
-      </section>
+        <section>
+          <EducationalSection
+            ammType={ammType}
+            lastSwapResult={lastSwapResult}
+            swapDirection={swapDirection}
+            tokenA={tokenA}
+            tokenB={tokenB}
+          />
+        </section>
 
-      <section>
-        <EducationalSection
-          ammType={ammType}
-          lastSwapResult={lastSwapResult}
-          swapDirection={swapDirection}
-          tokenA={tokenA}
-          tokenB={tokenB}
-        />
-      </section>
-
-      <footer className="text-center py-8 text-slate-400 text-sm">
-        AMM Explorer &bull; Built for educational purposes &bull; 2026
-      </footer>
+        <footer className="text-center py-8 text-slate-400 text-sm">
+          AMM Explorer &bull; Built for educational purposes &bull; 2026
+        </footer>
+      </div>
     </div>
   );
 }

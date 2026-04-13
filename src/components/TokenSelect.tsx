@@ -55,12 +55,12 @@ export function TokenSelect({ value, onChange }: TokenSelectProps) {
         onClick={() => (open ? setOpen(false) : openMenu())}
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.97 }}
-        className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm hover:border-indigo-300 transition-all"
+        className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 shadow-sm hover:border-purple-400/50 hover:bg-white/10 transition-all text-white/90"
       >
         <TokenIcon symbol={value.symbol} className="w-5 h-5" />
         <span className="font-bold text-sm">{value.symbol}</span>
         <ChevronDown
-          className={cn('text-slate-400 transition-transform duration-200', open && 'rotate-180')}
+          className={cn('text-white/50 transition-transform duration-200', open && 'rotate-180')}
           size={14}
         />
       </motion.button>
@@ -74,7 +74,7 @@ export function TokenSelect({ value, onChange }: TokenSelectProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-              className="fixed w-52 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2"
+              className="fixed w-52 bg-[#1a1a1a]/95 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-white/10 py-2"
               style={{
                 top: pos.top,
                 left: pos.left,
@@ -93,21 +93,21 @@ export function TokenSelect({ value, onChange }: TokenSelectProps) {
                   initial={{ opacity: 0, x: -6 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  whileHover={{ x: 2, backgroundColor: 'rgba(238,242,255,0.7)' }}
+                  whileHover={{ x: 2, backgroundColor: 'rgba(255,255,255,0.05)' }}
                   className={cn(
                     'w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors',
                     value.symbol === token.symbol
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'text-slate-700',
+                      ? 'bg-purple-500/20 text-purple-400'
+                      : 'text-white/70 hover:text-white/90',
                   )}
                 >
                   <TokenIcon symbol={token.symbol} className="w-6 h-6 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm">{token.symbol}</div>
-                    <div className="text-[11px] text-slate-400 truncate">{token.name}</div>
+                    <div className="text-[11px] text-white/50 truncate">{token.name}</div>
                   </div>
                   {value.symbol === token.symbol && (
-                    <Check size={14} className="text-indigo-500 shrink-0" />
+                    <Check size={14} className="text-purple-400 shrink-0" />
                   )}
                 </motion.button>
               ))}

@@ -25,16 +25,17 @@ export interface AnimeParams {
   delay?: number;
   loop?: boolean;
   onComplete?: () => void;
+  [key: string]: any;
 }
 
 /** Create a motion-path helper from an SVG `<path>` element. */
 export function createPath(el: SVGPathElement | null): MotionPathResult | null {
   if (!el) return null;
-  return (createMotionPath as (e: SVGPathElement) => MotionPathResult | null)(el);
+  return (createMotionPath as unknown as (e: SVGPathElement) => MotionPathResult | null)(el);
 }
 
 /** Run an animejs animation on a DOM element. */
 export function animateEl(target: Element | null, params: AnimeParams): void {
   if (!target) return;
-  (animate as (t: Element, p: AnimeParams) => void)(target, params);
+  (animate as unknown as (t: Element, p: AnimeParams) => void)(target, params);
 }

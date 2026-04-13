@@ -38,21 +38,11 @@ export function GlareHover({ children, className }: GlareHoverProps) {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] transition-opacity duration-300"
         style={{
-          background: `radial-gradient(260px circle at ${glare.x}% ${glare.y}%, rgba(129,140,248,0.22), rgba(199,210,254,0.09) 40%, transparent 70%)`,
+          background: `radial-gradient(260px circle at ${glare.x}% ${glare.y}%, rgba(168,85,247,0.1), rgba(168,85,247,0.03) 40%, transparent 70%)`,
           opacity: glare.visible ? 1 : 0,
         }}
       />
-      {/* Moving streak highlight */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-10 rounded-[inherit] transition-opacity duration-300"
-        style={{
-          background:
-            'linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.50) 42%, transparent 56%)',
-          transform: `translateX(${(glare.x - 50) * 0.5}%) translateY(${(glare.y - 50) * 0.35}%) rotate(10deg)`,
-          opacity: glare.visible ? 1 : 0,
-        }}
-      />
+
       {/* Content \u2014 z-20 so it\u2019s above the glare layers */}
       <div className="relative z-20">{children}</div>
     </div>

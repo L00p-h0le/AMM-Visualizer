@@ -59,9 +59,9 @@ export const SwapControls = ({
 
   return (
     <Tilt rotationFactor={4} isRevese className="w-full">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-[#13111C] rounded-2xl shadow-2xl border border-white/5 overflow-hidden">
         {/* Tabs */}
-        <div className="flex relative border-b border-slate-100">
+        <div className="flex relative border-b border-white/10">
           {(['swap', 'liquidity'] as const).map((tab) => (
             <button
               key={tab}
@@ -71,14 +71,14 @@ export const SwapControls = ({
               {activeTab === tab && (
                 <motion.div
                   layoutId="swap-tab-indicator"
-                  className="absolute inset-0 bg-indigo-50/60 border-b-2 border-indigo-600"
+                  className="absolute inset-0 bg-purple-500/10 border-b-2 border-purple-400"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
               <span
                 className={cn(
                   'relative z-[1]',
-                  activeTab === tab ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600',
+                  activeTab === tab ? 'text-purple-400' : 'text-white/50 hover:text-white/90',
                 )}
               >
                 {tab === 'swap' ? 'Swap' : 'Liquidity'}
@@ -108,7 +108,7 @@ export const SwapControls = ({
                       value={swapAmount}
                       onValueChange={setSwapAmount}
                       suffix={
-                        <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm shrink-0">
+                        <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-lg border border-white/10 shadow-sm shrink-0">
                           <TokenIcon symbol={fromToken.symbol} className="w-5 h-5" />
                           <span className="font-bold text-sm">{fromToken.symbol}</span>
                         </div>
@@ -117,7 +117,7 @@ export const SwapControls = ({
 
                     <button
                       onClick={handleSwapDirection}
-                      className="absolute left-1/2 -bottom-5 -translate-x-1/2 z-10 bg-white p-2 rounded-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow text-indigo-600"
+                      className="absolute left-1/2 -bottom-5 -translate-x-1/2 z-10 bg-[#1a1a1a] p-2 rounded-full border border-white/10 shadow-md hover:shadow-purple-500/20 transition-all text-purple-400"
                     >
                       <motion.div
                         animate={{ rotate: flipCount * 180 }}
@@ -139,7 +139,7 @@ export const SwapControls = ({
                       }
                       readOnly
                       suffix={
-                        <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm shrink-0">
+                        <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-lg border border-white/10 shadow-sm shrink-0">
                           <TokenIcon symbol={toToken.symbol} className="w-5 h-5" />
                           <span className="font-bold text-sm">{toToken.symbol}</span>
                         </div>
@@ -160,10 +160,10 @@ export const SwapControls = ({
                   >
                     <div
                       className={cn(
-                        'py-4 font-bold text-white text-center rounded-[10px] transition-colors',
+                        'py-4 font-bold text-white text-center rounded-[10px] transition-all',
                         isSwapping || swapAmount <= 0
-                          ? 'bg-slate-400'
-                          : 'bg-indigo-600 hover:bg-indigo-700',
+                          ? 'bg-white/10 text-white/50'
+                          : 'bg-purple-600 hover:bg-purple-500 shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:shadow-[0_0_28px_rgba(168,85,247,0.6)]',
                       )}
                     >
                       {isSwapping ? 'Simulating...' : 'Execute Swap'}
@@ -189,7 +189,7 @@ export const SwapControls = ({
                     animate={{ rotate: 0, scale: 1 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.1 }}
                     whileHover={{ rotate: 90, scale: 1.2 }}
-                    className="text-indigo-500 hover:text-indigo-600 transition-colors"
+                    className="text-purple-400 hover:text-purple-300 transition-colors"
                     title="Add custom liquidity"
                   >
                     <Plus className="w-5 h-5" />
@@ -197,18 +197,18 @@ export const SwapControls = ({
                   Add Liquidity
                 </h2>
 
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-white/50">
                   Adding liquidity increases the constant 'k', shifting the curve outward and
                   reducing slippage.
                 </p>
 
                 {/* Preset options with ripple buttons */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="bg-white/[0.04] p-4 rounded-xl border border-white/10 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Add 10% Liquidity</span>
                     <RippleButton
                       onClick={() => handleAddLiquidity(pool.x * 0.1, pool.y * 0.1)}
-                      className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors"
+                      className="bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-500 shadow-purple-500/40 shadow-lg transition-all"
                     >
                       Add Now
                     </RippleButton>
@@ -217,7 +217,7 @@ export const SwapControls = ({
                     <span className="text-sm font-medium">Add 50% Liquidity</span>
                     <RippleButton
                       onClick={() => handleAddLiquidity(pool.x * 0.5, pool.y * 0.5)}
-                      className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors"
+                      className="bg-purple-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-purple-500 shadow-purple-500/40 shadow-lg transition-all"
                     >
                       Add Now
                     </RippleButton>
@@ -225,19 +225,19 @@ export const SwapControls = ({
                 </div>
 
                 {/* Arbitrage note */}
-                <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-xs text-amber-800 flex gap-3">
-                  <NotepadText size={16} className="shrink-0 mt-0.5" />
+                <div className="bg-transparent border border-white/10 p-4 rounded-xl text-xs text-white/50 flex gap-3">
+                  <NotepadText size={16} className="shrink-0 mt-0.5 text-purple-400" />
                   <p>
                     When you add liquidity, you must provide both tokens in proportion to the
                     current price to avoid{' '}
                     <span className="inline-flex items-baseline gap-1">
-                      <span className="font-semibold underline decoration-amber-300">
+                      <span className="font-semibold underline decoration-white/30 text-white/90">
                         arbitrage
                       </span>
                       <motion.span
                         whileHover={{ rotate: [0, -12, 12, -8, 0], scale: 1.3 }}
                         transition={{ duration: 0.5 }}
-                        className="inline-flex text-amber-600 cursor-help"
+                        className="inline-flex text-purple-400 cursor-help"
                         title="Arbitrage is the practice of profiting from price differences between markets. In AMMs, disproportional liquidity creates arbitrage opportunities."
                       >
                         <Info size={12} />

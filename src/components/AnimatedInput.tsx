@@ -21,7 +21,7 @@ export function AnimatedInput({
     <div className="space-y-1.5">
       <motion.label
         className="text-xs font-medium uppercase block"
-        animate={{ color: focused ? '#6366f1' : '#94a3b8' }}
+        animate={{ color: focused ? '#c084fc' : '#ffffff80' }}
         transition={{ duration: 0.2 }}
       >
         {label}
@@ -31,8 +31,8 @@ export function AnimatedInput({
         className={cn(
           'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300',
           focused
-            ? 'border-indigo-400 bg-white shadow-[0_0_0_4px_rgba(99,102,241,0.08)]'
-            : 'border-slate-200 bg-slate-50',
+            ? 'border-purple-400 bg-white/10 shadow-[0_0_0_4px_rgba(168,85,247,0.15)]'
+            : 'border-white/10 bg-black/40',
           readOnly && 'opacity-75',
         )}
       >
@@ -46,10 +46,10 @@ export function AnimatedInput({
           className={cn(
             'bg-transparent text-xl font-bold w-full outline-none transition-colors duration-200',
             readOnly
-              ? 'text-slate-400 cursor-default'
+              ? 'text-white/50 cursor-default'
               : focused
-                ? 'text-indigo-700'
-                : 'text-slate-800',
+                ? 'text-purple-400'
+                : 'text-white/90',
           )}
         />
         {suffix}

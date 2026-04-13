@@ -36,21 +36,21 @@ export function SwapToast({ result, isSwapping }: SwapToastProps) {
           animate={{ opacity: 1, y: 0, x: 0 }}
           exit={{ opacity: 0, y: -20, x: 20 }}
           transition={{ type: 'spring', stiffness: 380, damping: 24 }}
-          className="fixed top-6 right-6 z-[9999] bg-white border border-green-200 shadow-xl rounded-2xl p-4 pr-6 min-w-[260px] max-w-[340px]"
+          className="fixed top-6 right-6 z-[9999] bg-[#1a1a1a]/95 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-2xl p-4 pr-6 min-w-[260px] max-w-[340px]"
         >
           <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex items-center justify-center w-8 h-8 rounded-full bg-green-100">
-              <Check size={16} className="text-green-600" />
+            <div className="mt-0.5 flex items-center justify-center w-8 h-8 rounded-full bg-purple-500/20">
+              <Check size={16} className="text-purple-400" />
             </div>
             <div>
-              <div className="font-semibold text-green-800 text-sm">Swap Successful</div>
-              <div className="text-xs text-green-600 mt-0.5">
+              <div className="font-semibold text-white/90 text-sm">Swap Successful</div>
+              <div className="text-xs text-purple-400 mt-0.5">
                 Swapped {result.in.toFixed(2)} for {result.out.toFixed(4)}
               </div>
             </div>
           </div>
           <motion.div
-            className="absolute bottom-0 left-0 h-[3px] bg-green-400 rounded-b-2xl"
+            className="absolute bottom-0 left-0 h-[3px] bg-purple-400 rounded-b-2xl"
             initial={{ width: '100%' }}
             animate={{ width: '0%' }}
             transition={{ duration: 2, ease: 'linear' }}
