@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, RefreshCw, NotepadText, Info } from 'lucide-react';
 import { TokenIcon } from './TokenIcon';
@@ -56,6 +56,11 @@ export const SwapControls = ({
 
   const fromToken = swapDirection === 'AtoB' ? tokenA : tokenB;
   const toToken = swapDirection === 'AtoB' ? tokenB : tokenA;
+
+  const estimatedOutput = useMemo(
+    () => swapAmount > 0 ? calculateSwap(pool, ammType, swapAmount, swapDirection).out.toFixed(4) : '0.0000',
+    [pool, ammType, swapAmount, swapDirection],
+  );
 
   return (
     <Tilt rotationFactor={4} isRevese className="w-full">
@@ -132,11 +137,7 @@ export const SwapControls = ({
                   <div className="pt-3">
                     <AnimatedInput
                       label="You Receive (Est.)"
-                      value={
-                        swapAmount > 0
-                          ? calculateSwap(pool, ammType, swapAmount, swapDirection).out.toFixed(4)
-                          : '0.0000'
-                      }
+                      value={estimatedOutput}
                       readOnly
                       suffix={
                         <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-lg border border-white/10 shadow-sm shrink-0">

@@ -120,7 +120,7 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
     const idealOut = inAmount * (1 - FEE_PERCENT) * initialSpotPrice;
     const slippage = idealOut > 0 ? Math.max(0, ((idealOut - outAmount) / idealOut) * 100) : 0;
 
-    return { priceBefore: 0, priceAfter: 0, priceChange, deltaX, deltaY, executionPrice: 0, slippage };
+    return { priceChange, deltaX, deltaY, slippage };
   }, [pool, previousPool, ammType]);
 
   /* ── trade-impact zone bounds ── */

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PoolStats } from './components/PoolStats';
 import { SwapControls } from './components/SwapControls';
@@ -9,9 +9,8 @@ import { TOKENS, type AMMType, type PoolState, type Token, type SwapResult } fro
 import { calculateSwap, computeK, defaultPool } from './lib/amm';
 import FloatingLines from './components/FloatingLines';
 import Lenis from 'lenis';
-import { useEffect } from 'react';
 
-const ENABLED_WAVES = ["top", "middle", "bottom"] as const;
+const ENABLED_WAVES: Array<'top' | 'middle' | 'bottom'> = ['top', 'middle', 'bottom'];
 
 export default function App() {
   /* ── Smooth Scrolling ── */
@@ -100,7 +99,7 @@ export default function App() {
         pointerEvents: 'none'  // so it doesn't block clicks
       }}>
         <FloatingLines
-          enabledWaves={ENABLED_WAVES as any}
+          enabledWaves={ENABLED_WAVES}
           lineCount={5}
           lineDistance={5}
           bendRadius={5}
@@ -123,7 +122,7 @@ export default function App() {
               setTokenB={handleSetTokenB}
               setPool={setPool}
               currentPrice={currentPrice}
-              resetPool={() => resetPool()}
+              resetPool={resetPool}
             />
             <SwapControls
               ammType={ammType}

@@ -19,7 +19,6 @@ interface TokenProps {
   pathRef: React.RefObject<SVGPathElement | null>;
   duration: number;
   onComplete: (id: number) => void;
-  key?: React.Key;
 }
 
 
@@ -128,7 +127,7 @@ export const AnimatedBeam = ({
 
   // Spawn tokens when transferring with organic jitter
   useEffect(() => {
-    let timeoutId: any;
+    let timeoutId: ReturnType<typeof setTimeout>;
     let isActive = true;
     const startTime = Date.now();
     const spawnDuration = 3000;

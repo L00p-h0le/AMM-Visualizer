@@ -23,14 +23,15 @@ export const TokenIcon = ({ symbol, className, animateOnLoad = false }: TokenIco
   const token = TOKENS.find(t => t.symbol === symbol) || TOKENS[0];
   const [hasError, setHasError] = useState(false);
 
+  const anim = {
+    initial: animateOnLoad ? { opacity: 0, scale: 0.85 } : (false as const),
+    animate: animateOnLoad ? { opacity: 1, scale: 1 } : undefined,
+    transition: { duration: 0.35, ease: 'easeOut' as const },
+  };
+
   if (symbol === 'USDC') {
     return (
-      <motion.div
-        initial={animateOnLoad ? { opacity: 0, scale: 0.85 } : false}
-        animate={animateOnLoad ? { opacity: 1, scale: 1 } : undefined}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        className={cn('shrink-0', className)}
-      >
+      <motion.div {...anim} className={cn('shrink-0', className)}>
         <UsdcIcon className="h-full w-full" />
       </motion.div>
     );
@@ -41,9 +42,7 @@ export const TokenIcon = ({ symbol, className, animateOnLoad = false }: TokenIco
       <motion.img
         src={token.icon}
         alt={token.name}
-        initial={animateOnLoad ? { opacity: 0, scale: 0.85 } : false}
-        animate={animateOnLoad ? { opacity: 1, scale: 1 } : undefined}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
+        {...anim}
         className={cn('block shrink-0 object-contain', className)}
         onError={() => setHasError(true)}
         loading="eager"
@@ -54,9 +53,7 @@ export const TokenIcon = ({ symbol, className, animateOnLoad = false }: TokenIco
 
   return (
     <motion.div
-      initial={animateOnLoad ? { opacity: 0, scale: 0.85 } : false}
-      animate={animateOnLoad ? { opacity: 1, scale: 1 } : undefined}
-      transition={{ duration: 0.35, ease: 'easeOut' }}
+      {...anim}
       className={cn(
         'flex shrink-0 items-center justify-center rounded-full font-bold text-white shadow-sm text-xs',
         token.color,
