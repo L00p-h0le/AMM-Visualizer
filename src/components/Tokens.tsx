@@ -2,12 +2,73 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Check } from 'lucide-react';
-import { TokenIcon } from './TokenIcon';
-import { TOKENS, type Token } from '../types/amm';
 import { cn } from '../lib/utils';
+import { TOKENS, type Token } from '../types/amm';
 import { useClickOutside } from '../hooks/useClickOutside';
 
-type TokenSelectProps = {
+export type TokenIconProps = {
+  symbol: string;
+  className?: string;
+  animateOnLoad?: boolean;
+};
+
+function UsdcIcon({ className }: { className?: string }) {
+  return (
+    <img
+      src="/usdc-official.png"
+      alt="USDC"
+      className={cn('block object-contain', className)}
+    />
+  );
+}
+
+export const TokenIcon = ({ symbol, className, animateOnLoad = false }: TokenIconProps) => {
+  const token = TOKENS.find(t => t.symbol === symbol) || TOKENS[0];
+  const [hasError, setHasError] = useState(false);
+
+  const anim = {
+    initial: animateOnLoad ? { opacity: 0, scale: 0.85 } : (false as const),
+    animate: animateOnLoad ? { opacity: 1, scale: 1 } : undefined,
+    transition: { duration: 0.35, ease: 'easeOut' as const },
+  };
+
+  if (symbol === 'USDC') {
+    return (
+      <motion.div {...anim} className={cn('shrink-0', className)}>
+        <UsdcIcon className="h-full w-full" />
+      </motion.div>
+    );
+  }
+
+  if (token.icon && !hasError) {
+    return (
+      <motion.img
+        src={token.icon}
+        alt={token.name}
+        {...anim}
+        className={cn('block shrink-0 object-contain', className)}
+        onError={() => setHasError(true)}
+        loading="eager"
+        draggable={false}
+      />
+    );
+  }
+
+  return (
+    <motion.div
+      {...anim}
+      className={cn(
+        'flex shrink-0 items-center justify-center rounded-full font-bold text-white shadow-sm text-xs',
+        token.color,
+        className,
+      )}
+    >
+      {symbol[0]}
+    </motion.div>
+  );
+};
+
+export type TokenSelectProps = {
   value: Token;
   onChange: (token: Token) => void;
 };

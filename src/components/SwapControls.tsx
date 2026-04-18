@@ -1,14 +1,13 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, RefreshCw, NotepadText, Info } from 'lucide-react';
-import { TokenIcon } from './TokenIcon';
+import { TokenIcon } from './Tokens';
 import { Tilt } from './Animation/Tilt';
-import { StarBorder } from './Animation/StarBorder';
 import { cn } from '../lib/utils';
 import type { AMMType, PoolState, Token, SwapResult } from '../types/amm';
 import { calculateSwap } from '../lib/amm';
 import { RippleButton } from './Animation/RippleButton';
-import { AnimatedInput } from './AnimatedInput';
+import { AnimatedInput } from './Animation/AnimatedInput';
 import { CustomLiquidityPopup } from './CustomLiquidityPopup';
 import { SwapToast } from './SwapToast';
 
@@ -64,7 +63,7 @@ export const SwapControls = ({
 
   return (
     <Tilt rotationFactor={4} isRevese className="w-full">
-      <div className="bg-[#13111C] rounded-2xl shadow-2xl border border-white/5 overflow-hidden">
+      <div className="bg-card text-card-foreground rounded-2xl border border-border overflow-hidden">
         {/* Tabs */}
         <div className="flex relative border-b border-white/10">
           {(['swap', 'liquidity'] as const).map((tab) => (
@@ -76,14 +75,14 @@ export const SwapControls = ({
               {activeTab === tab && (
                 <motion.div
                   layoutId="swap-tab-indicator"
-                  className="absolute inset-0 bg-purple-500/10 border-b-2 border-purple-400"
+                  className="absolute inset-0 bg-purple-500/10 border-b-2 border-purple-500"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
               <span
                 className={cn(
                   'relative z-[1]',
-                  activeTab === tab ? 'text-purple-400' : 'text-white/50 hover:text-white/90',
+                  activeTab === tab ? 'text-purple-600 dark:text-purple-400' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 {tab === 'swap' ? 'Swap' : 'Liquidity'}
@@ -122,7 +121,7 @@ export const SwapControls = ({
 
                     <button
                       onClick={handleSwapDirection}
-                      className="absolute left-1/2 -bottom-5 -translate-x-1/2 z-10 bg-[#1a1a1a] p-2 rounded-full border border-white/10 shadow-md hover:shadow-purple-500/20 transition-all text-purple-400"
+                      className="absolute left-1/2 -bottom-5 -translate-x-1/2 z-10 bg-card p-2 rounded-full border border-border shadow-md hover:shadow-purple-500/20 transition-all text-purple-500 dark:text-purple-400"
                     >
                       <motion.div
                         animate={{ rotate: flipCount * 180 }}
@@ -149,27 +148,18 @@ export const SwapControls = ({
                   </div>
 
                   {/* Execute Swap */}
-                  <StarBorder
-                    as="button"
-                    color="#a5b4fc"
-                    speed="4s"
+                  <button
                     onClick={handleSwap}
                     disabled={isSwapping || swapAmount <= 0}
                     className={cn(
-                      isSwapping && 'cursor-not-allowed opacity-70',
+                      'w-full py-4 font-bold text-white text-center rounded-xl transition-all shadow-lg',
+                      isSwapping || swapAmount <= 0
+                        ? 'bg-white/10 text-white/50 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-500 shadow-purple-500/20',
                     )}
                   >
-                    <div
-                      className={cn(
-                        'py-4 font-bold text-white text-center rounded-[10px] transition-all',
-                        isSwapping || swapAmount <= 0
-                          ? 'bg-white/10 text-white/50'
-                          : 'bg-purple-600 hover:bg-purple-500 shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:shadow-[0_0_28px_rgba(168,85,247,0.6)]',
-                      )}
-                    >
-                      {isSwapping ? 'Simulating...' : 'Execute Swap'}
-                    </div>
-                  </StarBorder>
+                    {isSwapping ? 'Simulating...' : 'Execute Swap'}
+                  </button>
                 </div>
               </motion.div>
             ) : (

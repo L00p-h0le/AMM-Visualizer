@@ -19,13 +19,8 @@ export const Header = ({ ammType, setAmmType, resetPool }: HeaderProps) => {
   useClickOutside([dropdownRef], () => setShowAmmDropdown(false), showAmmDropdown);
 
   return (
-    <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div>
-        <h1 className="text-4xl font-bold tracking-tight text-white/90">
-          AMM Explorer
-        </h1>
-        <p className="text-white/50 mt-1">Visualize Automated Market Maker mechanics in real-time.</p>
-      </div>
+    <header className="flex items-center justify-start">
+      {/* Redundant title and description removed as requested */}
 
       <div className="relative" ref={dropdownRef}>
         <motion.button
@@ -33,11 +28,11 @@ export const Header = ({ ammType, setAmmType, resetPool }: HeaderProps) => {
           onClick={() => setShowAmmDropdown(!showAmmDropdown)}
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.99 }}
-          className="flex items-center gap-3 bg-white/[0.04] backdrop-blur-md px-6 py-3 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.2)] border border-white/10 hover:border-purple-400/50 hover:bg-white/10 transition-all min-w-[240px] justify-between"
+          className="flex items-center gap-3 bg-card backdrop-blur-md px-6 py-3 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] border border-border hover:border-purple-400/50 hover:bg-accent transition-all min-w-[240px] justify-between"
         >
           <div className="text-left">
-            <div className="text-xs font-bold text-white/50 uppercase tracking-widest">Model</div>
-            <div className="font-bold text-white/90">{selectedAmm.name}</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Model</div>
+            <div className="font-bold text-foreground">{selectedAmm.name}</div>
           </div>
           <ChevronDown className={cn('text-white/50 transition-transform', showAmmDropdown && 'rotate-180')} size={20} />
         </motion.button>
@@ -49,7 +44,7 @@ export const Header = ({ ammType, setAmmType, resetPool }: HeaderProps) => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-              className="absolute right-0 mt-2 w-72 bg-[#1a1a1a]/95 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-white/10 z-50 overflow-hidden origin-top-right"
+              className="absolute left-0 mt-2 w-72 bg-[#1a1a1a]/95 backdrop-blur-lg rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-white/10 z-50 overflow-hidden origin-top-left"
             >
               <div className="p-2">
                 {AMM_MODELS.map((model, index) => (

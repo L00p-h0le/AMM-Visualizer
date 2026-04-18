@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -25,26 +25,12 @@ body {
   @apply bg-[#030303] text-white/90 font-sans antialiased;
 }
 
-/* StarBorder animated conic gradient */
-@property --star-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
 
-@keyframes star-spin {
-  from {
-    --star-angle: 0deg;
-  }
-
-  to {
-    --star-angle: 360deg;
-  }
-}
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-playfair: 'Playfair Display', serif;
+  --font-sans: 'Inter', 'Geist Variable', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -162,4 +148,52 @@ body {
   html {
     @apply font-sans;
   }
+}
+
+
+/* Heading font utility */
+.font-heading {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Scroll Snap Performance Optimizations */
+.snap-container {
+  height: 100vh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  scroll-behavior: auto;
+}
+
+.snap-section {
+  scroll-snap-align: start;
+  min-height: 100vh;
+  position: relative;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.snap-hero {
+  scroll-snap-align: start;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.snap-footer {
+  scroll-snap-align: start;
+}
+
+.snap-container::-webkit-scrollbar {
+  display: none;
+}
+
+.snap-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useState, useRef, useCallback } from "react";
 import { motion } from "motion/react";
 import { createPath, animateEl } from "../../lib/anime";
-import { TokenIcon } from "../TokenIcon";
+import { TokenIcon } from '../Tokens';
 
 interface AnimatedBeamProps {
   containerRef: React.RefObject<HTMLDivElement | null>;

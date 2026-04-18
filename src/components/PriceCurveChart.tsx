@@ -145,11 +145,11 @@ export const PriceCurveChart = ({ ammType, pool, previousPool }: PriceCurveChart
 
   return (
     <Tilt rotationFactor={4} isRevese className="h-full w-full">
-      <div className="bg-[#13111C] p-6 rounded-2xl shadow-2xl border border-white/5 h-full min-h-[500px] flex flex-col">
+      <div className="bg-[#13111C] p-6 rounded-2xl border border-white/5 h-full min-h-[500px] flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6 shrink-0">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+          <h2 className="text-lg font-semibold flex items-center gap-2 text-white">
             <AnimatedTrendingUp />
             Price Curve Visualization
           </h2>

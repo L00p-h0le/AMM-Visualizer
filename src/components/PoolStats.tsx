@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Droplets, RefreshCw, HelpCircle } from 'lucide-react';
 import { Tilt } from './Animation/Tilt';
 import { GlareHover } from './Animation/GlareHover';
-import { TokenSelect } from './TokenSelect';
+import { TokenSelect } from './Tokens';
 import { type AMMType, type PoolState, type Token } from '../types/amm';
 import { computeK } from '../lib/amm';
 
@@ -61,18 +61,11 @@ export const PoolStats = ({
 
   return (
     <Tilt rotationFactor={4} isRevese className="w-full">
-      <div className="bg-[#13111C] p-6 rounded-2xl shadow-2xl border border-white/5 space-y-6 flex flex-col justify-center">
+      <div className="bg-card text-card-foreground p-6 rounded-2xl border border-border space-y-6 flex flex-col justify-center">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.75, y: -4 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: 'easeOut' }}
-              className="shrink-0"
-            >
-              <Droplets className="text-purple-400 w-5 h-5" />
-            </motion.div>
+            <Droplets className="text-purple-400 w-5 h-5 shrink-0" />
             Pool Reserves
           </h2>
           <motion.button
@@ -91,7 +84,7 @@ export const PoolStats = ({
         {/* Token cards */}
         <div className="grid grid-cols-2 gap-4">
           {/* Token A */}
-          <GlareHover className="bg-white/[0.04] p-4 rounded-xl border border-white/10 backdrop-blur-md">
+          <GlareHover className="bg-white/[0.04] p-4 rounded-xl border border-white/10">
             <div className="flex justify-center mb-3">
               <TokenSelect value={tokenA} onChange={setTokenA} />
             </div>
@@ -101,12 +94,12 @@ export const PoolStats = ({
               onChange={(e) => setInputX(e.target.value)}
               onBlur={() => commitValue('x')}
               min={1}
-              className="w-full text-2xl font-bold tabular-nums bg-transparent outline-none focus:text-purple-400 text-white/90 transition-colors text-center"
+              className="w-full text-2xl font-bold tabular-nums bg-transparent outline-none focus:text-purple-600 dark:focus:text-purple-400 text-foreground transition-colors text-center"
             />
           </GlareHover>
 
           {/* Token B */}
-          <GlareHover className="bg-white/[0.04] p-4 rounded-xl border border-white/10 backdrop-blur-md">
+          <GlareHover className="bg-white/[0.04] p-4 rounded-xl border border-white/10">
             <div className="flex justify-center mb-3">
               <TokenSelect value={tokenB} onChange={setTokenB} />
             </div>
@@ -116,7 +109,7 @@ export const PoolStats = ({
               onChange={(e) => setInputY(e.target.value)}
               onBlur={() => commitValue('y')}
               min={1}
-              className="w-full text-2xl font-bold tabular-nums bg-transparent outline-none focus:text-purple-400 text-white/90 transition-colors text-center"
+              className="w-full text-2xl font-bold tabular-nums bg-transparent outline-none focus:text-purple-600 dark:focus:text-purple-400 text-foreground transition-colors text-center"
             />
           </GlareHover>
         </div>
@@ -124,10 +117,10 @@ export const PoolStats = ({
         {/* Stats */}
         <div className="pt-4 border-t border-white/10 space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-white/50 flex items-center gap-1">
+            <span className="text-sm text-muted-foreground flex items-center gap-1">
               Current Price <HelpCircle size={14} className="text-white/30" />
             </span>
-            <span className="font-mono font-semibold text-purple-400">
+            <span className="font-mono font-semibold text-purple-600 dark:text-purple-400">
               1 {tokenA.symbol} = {currentPrice} {tokenB.symbol}
             </span>
           </div>
@@ -135,7 +128,7 @@ export const PoolStats = ({
             <span className="text-sm text-white/50 font-medium">
               {ammType === 'StableSwap' ? 'Invariant (D)' : 'Constant (k)'}
             </span>
-            <span className="font-mono font-bold text-white/90">
+            <span className="font-mono font-bold text-foreground">
               {pool.k.toLocaleString()}
             </span>
           </div>

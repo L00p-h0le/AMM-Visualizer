@@ -122,7 +122,7 @@ export const ProcessSimulation = ({
         <div className="flex flex-col items-center gap-1 px-2 text-center">
           <span className="text-[10px] text-slate-400">Updated reserves:</span>
           <span className="text-[10px] font-mono text-indigo-600">
-            {(pendingPool?.x || pool.x).toFixed(2)} {tokenA.symbol} & {(pendingPool?.y || pool.y).toFixed(2)} {tokenB.symbol}
+            {(pendingPool?.x || pool.x).toFixed(2)} {tokenA.symbol} {" & "} {(pendingPool?.y || pool.y).toFixed(2)} {tokenB.symbol}
           </span>
         </div>
       ),
@@ -151,218 +151,218 @@ export const ProcessSimulation = ({
   const poolRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="bg-[#13111C] p-6 md:p-8 rounded-3xl shadow-2xl border border-white/5 min-h-[calc(100vh-6rem)] flex flex-col">
-      {/* Header */}
-      <div className="mb-10 px-2 text-left">
-        <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-2xl font-bold text-white/90 tracking-tight">Real-time Process Simulation</h2>
-        </div>
-        <p className="text-sm text-white/50 font-medium ml-2">
-          Current Price · 1 {tokenA.symbol} = {(pool.y / pool.x).toFixed(4)} {tokenB.symbol}
+    <div className="flex flex-col w-full min-h-[calc(100vh-6rem)] relative overflow-hidden">
+      {/* Header: Placed completely outside the main card */}
+      <div className="mb-6 px-1 text-left">
+        <h2 className="text-3xl font-bold text-slate-900 tracking-tight mb-1">
+          Real-time Process Simulation
+        </h2>
+        <p className="text-sm text-slate-500 font-medium">
+          Current Price &middot; 1 {tokenA.symbol} = {(pool.y / pool.x).toFixed(4)} {tokenB.symbol}
         </p>
       </div>
 
-      {/* Main Stage */}
+      {/* Content Wrapper / Unified Big Card */}
       <div
         ref={stageRef}
-        className="flex-1 relative bg-black/20 rounded-[2.5rem] border border-white/10 shadow-[inner_0_2px_10px_rgba(255,255,255,0.02)] flex flex-col items-center justify-center p-8 min-h-[500px]"
+        className="flex-1 relative bg-slate-50 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center justify-center p-8 min-h-[500px]"
       >
-        {/* Animated Beams */}
-        <AnimatedBeam
-          containerRef={stageRef}
-          fromRef={walletRef}
-          toRef={poolRef}
-          isTransferring={sendingActive}
-          symbol={inputToken.symbol}
-          curvature={-360}
-        />
-        <AnimatedBeam
-          containerRef={stageRef}
-          fromRef={poolRef}
-          toRef={walletRef}
-          isTransferring={receivingActive}
-          symbol={outputToken.symbol}
-          curvature={250}
-        />
+          {/* Animated Beams */}
+          <AnimatedBeam
+            containerRef={stageRef}
+            fromRef={walletRef}
+            toRef={poolRef}
+            isTransferring={sendingActive}
+            symbol={inputToken.symbol}
+            curvature={-360}
+          />
+          <AnimatedBeam
+            containerRef={stageRef}
+            fromRef={poolRef}
+            toRef={walletRef}
+            isTransferring={receivingActive}
+            symbol={outputToken.symbol}
+            curvature={250}
+          />
 
-        {/* Step Indicator */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2">
-          <div className="px-3 py-0.5 bg-[#1a1a1a] border border-white/10 rounded-full shadow-sm flex items-center justify-center">
-            <span className="text-[10px] font-bold text-white/50 tracking-[0.2em] uppercase leading-none">{stepLabels[animationState]}</span>
-          </div>
-        </div>
-
-        {/* Content Row: Parallel alignment */}
-        <div className="w-full max-w-5xl flex items-center justify-between gap-4">
-
-          {/* USER WALLET */}
-          <div className="flex flex-col items-center group">
-            {/* Tooltip bubble - Wallet Context (Steps 1, 3, 4) */}
-            <div className="h-20 mb-4 flex items-end">
-              <AnimatePresence mode="wait">
-                {['idle', 'sending', 'receiving', 'balancing'].includes(animationState) && (
-                  <motion.div
-                    key={animationState}
-                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                    className="bg-[#1a1a1a]/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/10 relative text-[11px] text-white/70 leading-relaxed font-medium max-w-[150px]"
-                  >
-                    {explanations[animationState].tooltip}
-                    {/* Bubble Tail */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1a1a1a] border-r border-b border-white/10 rotate-45 -mt-1.5" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+          {/* Step Indicator */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2">
+            <div className="px-3 py-0.5 bg-slate-100 border border-slate-200 rounded-full shadow-sm flex items-center justify-center">
+              <span className="text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase leading-none">{stepLabels[animationState]}</span>
             </div>
-
-            {/* Wallet Card */}
-            <div
-              ref={walletRef}
-              className={cn(
-                "w-40 h-52 bg-white/[0.04] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] p-5 flex flex-col items-center gap-4 transition-all duration-500 z-10",
-                currentIndex === 1 ? "ring-2 ring-purple-400 scale-[1.02]" : ""
-              )}
-            >
-              <div className="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/40">
-                <User className="w-7 h-7 text-white" />
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-xl font-bold text-white/90 tracking-tight mt-2">
-                  {animationState === 'idle' ? swapAmount : displayWalletBalance} {inputToken.symbol}
-                </span>
-              </div>
-              <div className="w-full pt-4 border-t border-white/10 flex flex-col gap-1">
-                <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-white/50">Send</span>
-                  <span className="font-bold text-white/90">{swapAmount} {inputToken.symbol}</span>
-                </div>
-                <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-white/50">Receive</span>
-                  <span className="font-bold text-white/90">{displayReceiveValue.toFixed(4)} {outputToken.symbol}</span>
-                </div>
-              </div>
-            </div>
-            <span className="mt-4 text-[11px] font-bold text-white/30 uppercase tracking-[0.15em]">USER WALLET</span>
           </div>
 
-          {/* AMM MODEL */}
-          <div className="flex-1 flex flex-col items-center">
-            <div className="relative">
-              {/* Tooltip bubble - AMM Context (Diagonally Left) - Positioned relative to the Card */}
-              <AnimatePresence mode="wait">
-                {animationState === 'calculating' && (
-                  <motion.div
-                    key={animationState}
-                    initial={{ opacity: 0, scale: 0.9, x: 20, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, x: -25, y: -10 }}
-                    exit={{ opacity: 0, scale: 0.9, x: 20, y: 10 }}
-                    className="absolute bottom-full left-0 -translate-x-[60%] bg-[#1a1a1a]/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/10 text-[11px] text-white/70 leading-relaxed font-medium w-[170px] z-20 mb-1"
-                  >
-                    {current.tooltip}
-                    {/* Bubble Tail */}
-                    <div className="absolute top-full right-6 w-3 h-3 bg-[#1a1a1a] border-r border-b border-white/10 rotate-45 -mt-1.5" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <div
-                className={cn(
-                  "w-44 h-56 bg-white/[0.04] backdrop-blur-md rounded-3xl border border-white/10 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.3)] flex flex-col p-6 items-center gap-4 transition-all duration-500 z-10",
-                  currentIndex === 2 ? "ring-2 ring-purple-400 scale-[1.02]" : ""
-                )}
-              >
-                <span className="text-2xl font-black text-white/90 tracking-tighter mt-4">{ammType}</span>
+          {/* Content Row: Parallel alignment */}
+          <div className="w-full max-w-5xl flex items-center justify-between gap-4">
 
-                {/* Math Display Area */}
-                <div className="flex-1 w-full bg-black/40 rounded-2xl flex items-center justify-center border border-white/10 overflow-hidden">
-                  <AnimatePresence mode="wait">
+            {/* USER WALLET */}
+            <div className="flex flex-col items-center group">
+              {/* Tooltip bubble - Wallet Context (Steps 1, 3, 4) */}
+              <div className="h-20 mb-4 flex items-end">
+                <AnimatePresence mode="wait">
+                  {['idle', 'sending', 'receiving', 'balancing'].includes(animationState) && (
                     <motion.div
                       key={animationState}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="w-full flex justify-center"
+                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                      className="bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-slate-200 relative text-[11px] text-slate-600 leading-relaxed font-medium max-w-[150px]"
                     >
-                      {current.math}
+                      {explanations[animationState].tooltip}
+                      {/* Bubble Tail */}
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-slate-200 rotate-45 -mt-1.5" />
                     </motion.div>
-                  </AnimatePresence>
-                </div>
+                  )}
+                </AnimatePresence>
               </div>
-            </div>
-          </div>
 
-          {/* LIQUIDITY POOL */}
-          <div className="flex flex-col items-center">
-            {/* Tooltip bubble - Pool Context (Steps 1, 3, 4) */}
-            <div className="h-20 mb-4 flex items-end">
-              <AnimatePresence mode="wait">
-                {['sending', 'receiving', 'balancing'].includes(animationState) && (
-                  <motion.div
-                    key={animationState}
-                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                    className="bg-[#1a1a1a]/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-white/10 relative text-[11px] text-white/70 leading-relaxed font-medium max-w-[150px] text-center"
-                  >
-                    {poolTooltips[animationState]}
-                    {/* Bubble Tail */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-[#1a1a1a] border-r border-b border-white/10 rotate-45 -mt-1.5" />
-                  </motion.div>
+              {/* Wallet Card */}
+              <div
+                ref={walletRef}
+                className={cn(
+                  "w-40 h-52 bg-white rounded-3xl border border-slate-200 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] p-5 flex flex-col items-center gap-4 transition-all duration-500 z-10",
+                  currentIndex === 1 ? "ring-2 ring-purple-400 scale-[1.02]" : ""
                 )}
-              </AnimatePresence>
-            </div>
-            <div
-              ref={poolRef}
-              className={cn(
-                "w-44 h-44 relative flex items-center justify-center z-10 transition-all duration-500 rounded-full",
-                currentIndex === 3 ? "ring-2 ring-purple-400 scale-[1.02]" : "ring-transparent"
-              )}
-            >
-              {/* Large Circular Chart */}
-              <div className="w-44 h-44 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden border-4 border-[#1a1a1a] flex flex-col bg-[#0a0a0a]">
-                {/* Upper: Token A */}
-                <div className="h-1/2 w-full flex items-center justify-center relative bg-purple-500/80">
-                  <div className="flex flex-col items-center text-white">
-                    <span className="text-[10px] font-bold text-white/70 uppercase">{tokenA.symbol}</span>
-                    <span className="text-xs font-bold">{displayPoolX.toFixed(2)}</span>
+              >
+                <div className="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center">
+                  <User className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-xl font-bold text-slate-900 tracking-tight mt-2">
+                    {animationState === 'idle' ? swapAmount : displayWalletBalance} {inputToken.symbol}
+                  </span>
+                </div>
+                <div className="w-full pt-4 border-t border-slate-100 flex flex-col gap-1">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500">Send</span>
+                    <span className="font-bold text-slate-800">{swapAmount} {inputToken.symbol}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500">Receive</span>
+                    <span className="font-bold text-slate-800">{displayReceiveValue.toFixed(4)} {outputToken.symbol}</span>
                   </div>
                 </div>
-                {/* Lower: Token B */}
-                <div className="h-1/2 w-full flex items-center justify-center bg-fuchsia-400/80">
-                  <div className="flex flex-col items-center text-white">
-                    <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{tokenB.symbol}</span>
-                    <span className="text-xs font-bold">{displayPoolY.toFixed(2)}</span>
+              </div>
+              <span className="mt-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">USER WALLET</span>
+            </div>
+
+            {/* AMM MODEL */}
+            <div className="flex-1 flex flex-col items-center">
+              <div className="relative">
+                {/* Tooltip bubble - AMM Context (Diagonally Left) - Positioned relative to the Card */}
+                <AnimatePresence mode="wait">
+                  {animationState === 'calculating' && (
+                    <motion.div
+                      key={animationState}
+                      initial={{ opacity: 0, scale: 0.9, x: 20, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, x: -25, y: -10 }}
+                      exit={{ opacity: 0, scale: 0.9, x: 20, y: 10 }}
+                      className="absolute bottom-full left-0 -translate-x-[60%] bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-slate-200 text-[11px] text-slate-600 leading-relaxed font-medium w-[170px] z-20 mb-1"
+                    >
+                      {current.tooltip}
+                      {/* Bubble Tail */}
+                      <div className="absolute top-full right-6 w-3 h-3 bg-white border-r border-b border-slate-200 rotate-45 -mt-1.5" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div
+                  className={cn(
+                    "w-44 h-56 bg-white rounded-3xl border border-slate-200 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] flex flex-col p-6 items-center gap-4 transition-all duration-500 z-10",
+                    currentIndex === 2 ? "ring-2 ring-purple-400 scale-[1.02]" : ""
+                  )}
+                >
+                  <span className="text-2xl font-black text-slate-900 tracking-tighter mt-4">{ammType}</span>
+
+                  {/* Math Display Area */}
+                  <div className="flex-1 w-full bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden font-mono text-xs text-slate-900">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={animationState}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="w-full flex justify-center"
+                      >
+                        {current.math}
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>
             </div>
-            <span className="mt-4 text-[11px] font-bold text-white/30 uppercase tracking-[0.15em]">LIQUIDITY POOL</span>
+
+            {/* LIQUIDITY POOL */}
+            <div className="flex flex-col items-center">
+              {/* Tooltip bubble - Pool Context (Steps 1, 3, 4) */}
+              <div className="h-20 mb-4 flex items-end">
+                <AnimatePresence mode="wait">
+                  {['sending', 'receiving', 'balancing'].includes(animationState) && (
+                    <motion.div
+                      key={animationState}
+                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                      className="bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-slate-200 relative text-[11px] text-slate-600 leading-relaxed font-medium max-w-[150px] text-center"
+                    >
+                      {poolTooltips[animationState]}
+                      {/* Bubble Tail */}
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-slate-200 rotate-45 -mt-1.5" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div
+                ref={poolRef}
+                className={cn(
+                  "w-44 h-44 relative flex items-center justify-center z-10 transition-all duration-500 rounded-full",
+                  currentIndex === 3 ? "ring-2 ring-purple-400 scale-[1.02]" : "ring-transparent"
+                )}
+              >
+                {/* Large Circular Chart */}
+                <div className="w-44 h-44 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.1)] overflow-hidden border-4 border-slate-50 flex flex-col bg-slate-100">
+                  {/* Upper: Token A */}
+                  <div className="h-1/2 w-full flex items-center justify-center relative bg-purple-500">
+                    <div className="flex flex-col items-center text-white">
+                      <span className="text-[10px] font-bold text-white/80 uppercase">{tokenA.symbol}</span>
+                      <span className="text-xs font-bold">{displayPoolX.toFixed(2)}</span>
+                    </div>
+                  </div>
+                  {/* Lower: Token B */}
+                  <div className="h-1/2 w-full flex items-center justify-center bg-fuchsia-500">
+                    <div className="flex flex-col items-center text-white">
+                      <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest">{tokenB.symbol}</span>
+                      <span className="text-xs font-bold">{displayPoolY.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <span className="mt-4 text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">LIQUIDITY POOL</span>
+            </div>
+
           </div>
 
-        </div>
+          {/* Global Controls - Manual Navigation */}
+          <div className="absolute bottom-8 flex items-center gap-6">
+            <button
+              onClick={prevStep}
+              disabled={currentIndex === 0 || animationState !== 'idle'}
+              className="w-12 h-12 bg-white rounded-2xl border-2 border-purple-200 flex items-center justify-center text-purple-600 hover:bg-purple-50 hover:border-purple-300 transition-all disabled:opacity-20 group"
+            >
+              <ChevronLeft className="w-6 h-6 transition-transform group-hover:-translate-x-0.5" />
+            </button>
 
-        {/* Global Controls - Manual Navigation */}
-        <div className="absolute bottom-8 flex items-center gap-6">
-          <button
-            onClick={prevStep}
-            disabled={currentIndex === 0}
-            className="w-10 h-10 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-sm flex items-center justify-center text-white/50 hover:text-purple-400 hover:border-purple-400/50 hover:bg-white/10 transition-all disabled:opacity-30 group"
-          >
-            <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
-          </button>
-
-          <button
-            onClick={nextStep}
-            className="w-10 h-10 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-sm flex items-center justify-center text-white/50 hover:text-purple-400 hover:border-purple-400/50 hover:bg-white/10 transition-all group"
-          >
-            {currentIndex === sequence.length - 1 ? (
-              <RotateCcw className="w-5 h-5 transition-transform group-hover:rotate-[-45deg]" />
-            ) : (
-              <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />
-            )}
-          </button>
+            <button
+              onClick={nextStep}
+              className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white hover:bg-purple-700 hover:scale-105 active:scale-95 transition-all group"
+            >
+              {currentIndex === sequence.length - 1 ? (
+                <RotateCcw className="w-6 h-6 transition-transform group-hover:rotate-[-45deg]" />
+              ) : (
+                <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-0.5" />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
     </div>
   );
 };

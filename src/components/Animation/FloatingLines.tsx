@@ -11,6 +11,8 @@ import {
   WebGLRenderer
 } from 'three';
 
+import './FloatingLines.css';
+
 const vertexShader = `
 precision highp float;
 
@@ -80,7 +82,7 @@ vec3 getLineColor(float t, vec3 baseColor) {
   }
 
   vec3 gradientColor;
-  
+
   if (lineGradientCount == 1) {
     gradientColor = lineGradient[0];
   } else {
@@ -92,14 +94,14 @@ vec3 getLineColor(float t, vec3 baseColor) {
 
     vec3 c1 = lineGradient[idx];
     vec3 c2 = lineGradient[idx2];
-    
+
     gradientColor = mix(c1, c2, f);
   }
-  
+
   return gradientColor * 0.5;
 }
 
-  float wave(vec2 uv, float offset, vec2 screenUv, vec2 mouseUv, bool shouldBend) {
+float wave(vec2 uv, float offset, vec2 screenUv, vec2 mouseUv, bool shouldBend) {
   float time = iTime * animationSpeed;
 
   float x_offset   = offset;
@@ -121,7 +123,7 @@ vec3 getLineColor(float t, vec3 baseColor) {
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   vec2 baseUv = (2.0 * fragCoord - iResolution.xy) / iResolution.y;
   baseUv.y *= -1.0;
-  
+
   if (parallax) {
     baseUv += parallaxOffset;
   }
@@ -135,13 +137,14 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     mouseUv = (2.0 * iMouse - iResolution.xy) / iResolution.y;
     mouseUv.y *= -1.0;
   }
-  
+
   if (enableBottom) {
-    for (int i = 0; i < bottomLineCount; ++i) {
+    for (int i = 0; i < 8; ++i) { // Fixed loop limit for WebGL compatibility
+      if (i >= bottomLineCount) break;
       float fi = float(i);
       float t = fi / max(float(bottomLineCount - 1), 1.0);
       vec3 lineCol = getLineColor(t, b);
-      
+
       float angle = bottomWavePosition.z * log(length(baseUv) + 1.0);
       vec2 ruv = baseUv * rotate(angle);
       col += lineCol * wave(
@@ -155,11 +158,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   }
 
   if (enableMiddle) {
-    for (int i = 0; i < middleLineCount; ++i) {
+    for (int i = 0; i < 8; ++i) { // Fixed loop limit
+      if (i >= middleLineCount) break;
       float fi = float(i);
       float t = fi / max(float(middleLineCount - 1), 1.0);
       vec3 lineCol = getLineColor(t, b);
-      
+
       float angle = middleWavePosition.z * log(length(baseUv) + 1.0);
       vec2 ruv = baseUv * rotate(angle);
       col += lineCol * wave(
@@ -173,11 +177,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
   }
 
   if (enableTop) {
-    for (int i = 0; i < topLineCount; ++i) {
+    for (int i = 0; i < 8; ++i) { // Fixed loop limit
+      if (i >= topLineCount) break;
       float fi = float(i);
       float t = fi / max(float(topLineCount - 1), 1.0);
       vec3 lineCol = getLineColor(t, b);
-      
+
       float angle = topWavePosition.z * log(length(baseUv) + 1.0);
       vec2 ruv = baseUv * rotate(angle);
       ruv.x *= -1.0;
@@ -203,31 +208,7 @@ void main() {
 
 const MAX_GRADIENT_STOPS = 8;
 
-type WavePosition = {
-  x: number;
-  y: number;
-  rotate: number;
-};
-
-type FloatingLinesProps = {
-  linesGradient?: string[];
-  enabledWaves?: Array<'top' | 'middle' | 'bottom'>;
-  lineCount?: number | number[];
-  lineDistance?: number | number[];
-  topWavePosition?: WavePosition;
-  middleWavePosition?: WavePosition;
-  bottomWavePosition?: WavePosition;
-  animationSpeed?: number;
-  interactive?: boolean;
-  bendRadius?: number;
-  bendStrength?: number;
-  mouseDamping?: number;
-  parallax?: boolean;
-  parallaxStrength?: number;
-  mixBlendMode?: React.CSSProperties['mixBlendMode'];
-};
-
-function hexToVec3(hex: string): Vector3 {
+function hexToVec3(hex: string) {
   let value = hex.trim();
 
   if (value.startsWith('#')) {
@@ -251,16 +232,38 @@ function hexToVec3(hex: string): Vector3 {
   return new Vector3(r / 255, g / 255, b / 255);
 }
 
-import React from 'react';
+interface WavePosition {
+  x: number;
+  y: number;
+  rotate: number;
+}
 
-const FloatingLines = React.memo(function FloatingLines({
+interface FloatingLinesProps {
+  linesGradient?: string[];
+  enabledWaves?: string[];
+  lineCount?: number | number[];
+  lineDistance?: number | number[];
+  topWavePosition?: Partial<WavePosition>;
+  middleWavePosition?: Partial<WavePosition>;
+  bottomWavePosition?: Partial<WavePosition>;
+  animationSpeed?: number;
+  interactive?: boolean;
+  bendRadius?: number;
+  bendStrength?: number;
+  mouseDamping?: number;
+  parallax?: boolean;
+  parallaxStrength?: number;
+  mixBlendMode?: React.CSSProperties['mixBlendMode'];
+}
+
+export default function FloatingLines({
   linesGradient,
   enabledWaves = ['top', 'middle', 'bottom'],
   lineCount = [6],
   lineDistance = [5],
   topWavePosition,
   middleWavePosition,
-  bottomWavePosition = { x: 2.0, y: -0.7, rotate: -1 },
+  bottomWavePosition = { x: 2.0, y: -0.7, rotate: 0.4 },
   animationSpeed = 1,
   interactive = true,
   bendRadius = 5.0,
@@ -270,22 +273,22 @@ const FloatingLines = React.memo(function FloatingLines({
   parallaxStrength = 0.2,
   mixBlendMode = 'screen'
 }: FloatingLinesProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const targetMouseRef = useRef<Vector2>(new Vector2(-1000, -1000));
-  const currentMouseRef = useRef<Vector2>(new Vector2(-1000, -1000));
-  const targetInfluenceRef = useRef<number>(0);
-  const currentInfluenceRef = useRef<number>(0);
-  const targetParallaxRef = useRef<Vector2>(new Vector2(0, 0));
-  const currentParallaxRef = useRef<Vector2>(new Vector2(0, 0));
+  const containerRef = useRef<HTMLDivElement>(null);
+  const targetMouseRef = useRef(new Vector2(-1000, -1000));
+  const currentMouseRef = useRef(new Vector2(-1000, -1000));
+  const targetInfluenceRef = useRef(0);
+  const currentInfluenceRef = useRef(0);
+  const targetParallaxRef = useRef(new Vector2(0, 0));
+  const currentParallaxRef = useRef(new Vector2(0, 0));
 
-  const getLineCount = (waveType: 'top' | 'middle' | 'bottom'): number => {
+  const getLineCount = (waveType: string) => {
     if (typeof lineCount === 'number') return lineCount;
     if (!enabledWaves.includes(waveType)) return 0;
     const index = enabledWaves.indexOf(waveType);
     return lineCount[index] ?? 6;
   };
 
-  const getLineDistance = (waveType: 'top' | 'middle' | 'bottom'): number => {
+  const getLineDistance = (waveType: string) => {
     if (typeof lineDistance === 'number') return lineDistance;
     if (!enabledWaves.includes(waveType)) return 0.1;
     const index = enabledWaves.indexOf(waveType);
@@ -311,13 +314,17 @@ const FloatingLines = React.memo(function FloatingLines({
     const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     camera.position.z = 1;
 
-    const renderer = new WebGLRenderer({ antialias: true, alpha: false });
+    const renderer = new WebGLRenderer({
+      antialias: false,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
     container.appendChild(renderer.domElement);
 
-    const uniforms = {
+    const uniforms: any = {
       iTime: { value: 0 },
       iResolution: { value: new Vector3(1, 1, 1) },
       animationSpeed: { value: animationSpeed },
@@ -381,7 +388,8 @@ const FloatingLines = React.memo(function FloatingLines({
     const material = new ShaderMaterial({
       uniforms,
       vertexShader,
-      fragmentShader
+      fragmentShader,
+      transparent: true
     });
 
     const geometry = new PlaneGeometry(2, 2);
@@ -407,9 +415,9 @@ const FloatingLines = React.memo(function FloatingLines({
     const ro =
       typeof ResizeObserver !== 'undefined'
         ? new ResizeObserver(() => {
-            if (!active) return;
-            setSize();
-          })
+          if (!active) return;
+          setSize();
+        })
         : null;
 
     if (ro) ro.observe(container);
@@ -437,13 +445,26 @@ const FloatingLines = React.memo(function FloatingLines({
     };
 
     if (interactive) {
-      renderer.domElement.addEventListener('pointermove', handlePointerMove);
+      renderer.domElement.addEventListener('pointermove', handlePointerMove as any);
       renderer.domElement.addEventListener('pointerleave', handlePointerLeave);
     }
+
+    let isVisible = true;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(container);
 
     let raf = 0;
     const renderLoop = () => {
       if (!active) return;
+      if (!isVisible) {
+        raf = requestAnimationFrame(renderLoop);
+        return;
+      }
 
       uniforms.iTime.value = clock.getElapsedTime();
 
@@ -471,16 +492,16 @@ const FloatingLines = React.memo(function FloatingLines({
       cancelAnimationFrame(raf);
 
       if (ro) ro.disconnect();
+      if (observer) observer.disconnect();
 
       if (interactive) {
-        renderer.domElement.removeEventListener('pointermove', handlePointerMove);
+        renderer.domElement.removeEventListener('pointermove', handlePointerMove as any);
         renderer.domElement.removeEventListener('pointerleave', handlePointerLeave);
       }
 
       geometry.dispose();
       material.dispose();
       renderer.dispose();
-      renderer.forceContextLoss();
       if (renderer.domElement.parentElement) {
         renderer.domElement.parentElement.removeChild(renderer.domElement);
       }
@@ -505,12 +526,10 @@ const FloatingLines = React.memo(function FloatingLines({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden floating-lines-container"
+      className="floating-lines-container"
       style={{
         mixBlendMode: mixBlendMode
       }}
     />
   );
-});
-
-export default FloatingLines;
+}
