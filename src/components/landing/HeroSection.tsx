@@ -1,18 +1,8 @@
 import { motion } from 'motion/react';
-import FloatingLines from '../Animation/FloatingLines';
 
 export const HeroSection = () => {
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-      {/* Floating Lines Background restricted to Hero */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
-        <FloatingLines
-          linesGradient={['#8B5CF6', '#D946EF', '#6366F1']}
-          animationSpeed={0.5}
-          parallax={true}
-          parallaxStrength={0.1}
-        />
-      </div>
 
       {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">

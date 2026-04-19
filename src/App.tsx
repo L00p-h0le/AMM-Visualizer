@@ -58,7 +58,7 @@ export default function App() {
         </section>
 
         {/* 3. Process Simulation */}
-        <section id="simulation" className="snap-section flex items-center bg-white border-t border-black/5 text-slate-900">
+        <section id="simulation" className="snap-section flex items-center bg-slate-50 border-t border-black/5 text-slate-900">
           <div className="max-w-7xl mx-auto px-6 md:px-10 w-full py-20">
             <div className="light">
               {SimulationSection}

@@ -3,6 +3,7 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { useRef, useMemo } from 'react';
 import { AnimatedBeam } from './Animation/AnimatedBeam';
+import Grainient from './Animation/Grainient';
 import type { PoolState, Token, AMMType } from '../types/amm';
 
 interface ProcessSimulationProps {
@@ -165,8 +166,17 @@ export const ProcessSimulation = ({
       {/* Content Wrapper / Unified Big Card */}
       <div
         ref={stageRef}
-        className="flex-1 relative bg-slate-50 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center justify-center p-8 min-h-[500px]"
+        className="flex-1 relative bg-slate-50 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col items-center justify-center p-8 min-h-[500px] overflow-hidden"
       >
+          <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
+            <Grainient
+              color1="#a855f7"
+              color2="#6366f1"
+              color3="#ffffff"
+              timeSpeed={0.2}
+              noiseScale={2}
+            />
+          </div>
           {/* Animated Beams */}
           <AnimatedBeam
             containerRef={stageRef}

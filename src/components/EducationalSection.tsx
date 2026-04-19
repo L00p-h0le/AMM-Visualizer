@@ -1,7 +1,6 @@
-import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { useState, useEffect, useRef } from 'react';
 import { AMM_MODELS, type AMMType, type Token, type SwapResult } from '../types/amm';
+import { cn } from '../lib/utils';
 
 interface EducationalSectionProps {
   ammType: AMMType;
@@ -11,122 +10,144 @@ interface EducationalSectionProps {
   tokenB: Token;
 }
 
-export const EducationalSection = ({ ammType, lastSwapResult, swapDirection, tokenA, tokenB }: EducationalSectionProps) => {
-  const selectedAmm = AMM_MODELS.find(m => m.id === ammType) || AMM_MODELS[0];
+export const EducationalSection = ({ ammType }: Pick<EducationalSectionProps, 'ammType'>) => {
+  const [activeModelId, setActiveModelId] = useState<AMMType>(ammType);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const inToken = swapDirection === 'AtoB' ? tokenA : tokenB;
-  const outToken = swapDirection === 'AtoB' ? tokenB : tokenA;
+  // Sync with global model change from the top section
+  useEffect(() => {
+    const index = AMM_MODELS.findIndex(m => m.id === ammType);
+    if (index !== -1 && scrollRef.current) {
+      const scrollWidth = scrollRef.current.offsetWidth;
+      scrollRef.current.scrollTo({ left: index * scrollWidth, behavior: 'smooth' });
+    }
+  }, [ammType]);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, offsetWidth } = scrollRef.current;
+    const index = Math.round(scrollLeft / offsetWidth);
+    if (AMM_MODELS[index]) {
+      setActiveModelId(AMM_MODELS[index].id as AMMType);
+    }
+  };
+
+  const scrollToModel = (id: AMMType) => {
+    const index = AMM_MODELS.findIndex(m => m.id === id);
+    if (index !== -1 && scrollRef.current) {
+      const scrollWidth = scrollRef.current.offsetWidth;
+      scrollRef.current.scrollTo({ left: index * scrollWidth, behavior: 'smooth' });
+    }
+  };
+
 
   return (
-    <section className="bg-card text-card-foreground p-8 md:p-12 rounded-3xl border border-border space-y-12">
-      <div className="max-w-3xl">
-        <h2 className="text-3xl font-bold mb-4 text-purple-400">
-          How it works: {selectedAmm.name.split(' (')[0]}
-        </h2>
-        <p className="text-muted-foreground text-lg leading-relaxed">
-          {ammType === 'CPMM' && "The Constant Product model ensures that the total product of the two token reserves stays constant. This creates a hyperbolic curve where the price increases exponentially as liquidity is drained, preventing the pool from ever reaching zero."}
-          {ammType === 'CSMM' && "The Constant Sum model maintains a fixed total amount of assets. While this allows for theoretically zero slippage, it is vulnerable to being 'drained' if the external market price moves away from 1:1."}
-          {ammType === 'StableSwap' && "The Hybrid StableSwap model leverages a specialized invariant that combines both Constant Sum and Constant Product math. It provides extremely high capital efficiency and near-zero slippage near the 1:1 peg."}
-        </p>
-      </div>
+    <div className="space-y-8">
+      {/* "How it works" stays outside for context */}
+      <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+        How it works:
+      </h2>
+      
+      {/* Main Educational Carousel Container */}
+      <section className="relative group bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth flex-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {AMM_MODELS.map((model) => (
+            <div
+              key={model.id}
+              className="min-w-full snap-center p-8 md:p-12 space-y-12"
+            >
+              <div className="max-w-3xl space-y-4">
+                <h3 className="text-4xl font-bold text-purple-600 tracking-tight">
+                  {model.name.split(' (')[0]}
+                </h3>
+                <p className="text-slate-500 text-lg leading-relaxed font-medium">
+                  {model.id === 'CPMM' && "The Constant Product model ensures that the total product of the two token reserves stays constant. This creates a hyperbolic curve where the price increases exponentially as liquidity is drained, preventing the pool from ever reaching zero."}
+                  {model.id === 'CSMM' && "The Constant Sum model maintains a fixed total amount of assets. While this allows for theoretically zero slippage, it is vulnerable to being 'drained' if the external market price moves away from 1:1."}
+                  {model.id === 'StableSwap' && "The Hybrid StableSwap model leverages a specialized invariant that combines both Constant Sum and Constant Product math. It provides extremely high capital efficiency and near-zero slippage near the 1:1 peg."}
+                </p>
+              </div>
 
-      <AnimatePresence mode="wait">
-        {lastSwapResult && (
-          <motion.div
-            key="swap-result"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-accent/20 p-8 rounded-2xl border border-border shadow-xl"
-          >
-            <div className="space-y-2">
-              <div className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Realized Output</div>
-              <div className="text-xl font-bold text-foreground flex items-center truncate">
-                {lastSwapResult.in} {inToken.symbol}
-                <ArrowRight size={14} className="mx-2 text-purple-400 shrink-0" />
-                {lastSwapResult.out.toFixed(4)} {outToken.symbol}
+              {/* Model Deep Dive */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-slate-50/50 p-8 rounded-3xl border border-slate-100">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-purple-600 font-bold uppercase text-[10px] tracking-[0.2em]">
+                    Key Advantage
+                  </div>
+                  <p className="text-slate-600 text-base leading-relaxed">
+                    {model.id === 'CPMM' && "Allows for continuous, permissionless trading across any price range without needing external price oracles."}
+                    {model.id === 'CSMM' && "Provides the most efficient trades possible (1:1) as long as the pool remains balanced."}
+                    {model.id === 'StableSwap' && "Massive efficiency for correlated assets; handles billions in volume with cents in slippage."}
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-rose-500 font-bold uppercase text-[10px] tracking-[0.2em]">
+                    Main Tradeoff
+                  </div>
+                  <p className="text-slate-600 text-base leading-relaxed">
+                    {model.id === 'CPMM' && "Impermanent Loss: LPs lose value if the price of paired tokens diverges from their entry point."}
+                    {model.id === 'CSMM' && "Systemic Risk: Arbitrageurs will completely drain the 'cheap' token if the market price deviates from 1:1."}
+                    {model.id === 'StableSwap' && "Complexity: If one asset de-pegs permanently, the model reverts to inefficient CPMM behavior."}
+                  </p>
+                </div>
+              </div>
+
+              {/* FAQ Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-4">
+                <div className="bg-white border border-slate-100 p-6 rounded-2-5xl shadow-sm hover:border-purple-100 transition-colors group">
+                  <h4 className="text-base font-bold mb-2 text-slate-900">Can we control slippage?</h4>
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    Yes. Users can set a <strong className="text-slate-700">Slippage Tolerance</strong> (e.g., 0.5%). If the real price moves further before the tx confirms, the execution reverts to protect your funds.
+                  </p>
+                </div>
+
+                <div className="bg-white border border-slate-100 p-6 rounded-2-5xl shadow-sm hover:border-purple-100 transition-colors group">
+                  <h4 className="text-base font-bold mb-2 text-slate-900">Are LP fees constant?</h4>
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    Usually, yes (0.3% is standard). Some protocols use <strong className="text-slate-700">Dynamic Fees</strong> that increase during high volatility or decrease for stablecoin-only pairs.
+                  </p>
+                </div>
+
+                <div className="bg-white border border-slate-100 p-6 rounded-2-5xl shadow-sm hover:border-purple-100 transition-colors group">
+                  <h4 className="text-base font-bold mb-2 text-slate-900">Can the pool be drained?</h4>
+                  <p className="text-slate-500 text-xs leading-relaxed">
+                    {model.id === 'CPMM' && "In CPMM, it is mathematically impossible to empty the pool. As reserves drop, the cost approaches infinity, pricing out all buyers."}
+                    {model.id === 'CSMM' && "Yes. CSMM is highly vulnerable. If the market price deviates from 1:1, arbitrageurs will drain the reserve completely."}
+                    {model.id === 'StableSwap' && "Essentially no. StableSwap transitions to CPMM behavior if reserves become unbalanced, protecting the final tokens."}
+                  </p>
+                </div>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <div className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Price Impact</div>
-              <div className={cn("text-xl font-bold", lastSwapResult.priceImpact > 5 ? "text-red-400" : "text-green-400")}>
-                {lastSwapResult.priceImpact.toFixed(2)}%
-              </div>
-              <p className="text-[10px] text-white/50 leading-tight">Difference between market price and realized price.</p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">LP Fee (0.3%)</div>
-              <div className="text-xl font-bold text-amber-500">
-                {lastSwapResult.fee.toFixed(4)} {inToken.symbol}
-              </div>
-              <p className="text-[10px] text-white/50 leading-tight">100% enters pool; fee stays as LP reward.</p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Invariant Shift ({lastSwapResult.invariantName})</div>
-              <div className="text-xl font-bold text-sky-400 flex items-center gap-2">
-                {lastSwapResult.kBefore.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                <ArrowRight size={14} className="text-sky-400" />
-                {lastSwapResult.kAfter.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-              </div>
-              <p className="text-[10px] text-green-400 font-medium">↑ Improved via fee accumulation</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Model Deep Dive: Always Visible */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 bg-accent/20 p-8 rounded-2xl border border-border shadow-xl">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-purple-600 font-bold uppercase text-xs tracking-[0.2em]">
-            Key Advantage
-          </div>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            {ammType === 'CPMM' && "Allows for continuous, permissionless trading across any price range without needing external price oracles."}
-            {ammType === 'CSMM' && "Provides the most efficient trades possible (1:1) as long as the pool remains balanced."}
-            {ammType === 'StableSwap' && "Massive efficiency for correlated assets; handles billions in volume with cents in slippage."}
-          </p>
+          ))}
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-red-400 font-bold uppercase text-xs tracking-[0.2em]">
-            Main Tradeoff
-          </div>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            {ammType === 'CPMM' && "Impermanent Loss: LPs lose value if the price of paired tokens diverges from their entry point."}
-            {ammType === 'CSMM' && "Systemic Risk: Arbitrageurs will completely drain the 'cheap' token if the market price deviates from 1:1."}
-            {ammType === 'StableSwap' && "Complexity: If one asset de-pegs permanently, the model reverts to inefficient CPMM behavior."}
-          </p>
-        </div>
-      </div>
-
-      {/* FAQ Cards: Always Visible */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="bg-accent/20 border border-border p-6 rounded-2xl hover:bg-accent/40 transition-colors group">
-          <h4 className="text-lg font-bold mb-2 text-purple-400">Can we control slippage?</h4>
-          <p className="text-muted-foreground/70 text-sm leading-relaxed">
-            Yes. Users can set a <strong>Slippage Tolerance</strong> (e.g., 0.5%). If the real price moves further before the tx confirms, the execution reverts to protect your funds.
-          </p>
+        {/* Navigation Dots - Bottom of Card */}
+        <div className="flex items-center justify-center gap-4 pb-8 pt-4 bg-white">
+          {AMM_MODELS.map((model) => (
+            <button
+              key={model.id}
+              onClick={() => scrollToModel(model.id as AMMType)}
+              className={cn(
+                "rounded-full transition-all duration-300",
+                activeModelId === model.id
+                  ? "bg-purple-600 w-3 h-3 shadow-[0_0_12px_rgba(168,85,247,0.4)]"
+                  : "bg-slate-200 hover:bg-slate-300 w-1.5 h-1.5"
+              )}
+              title={model.name}
+            />
+          ))}
         </div>
 
-        <div className="bg-accent/20 border border-border p-6 rounded-2xl hover:bg-accent/40 transition-colors group">
-          <h4 className="text-lg font-bold mb-2 text-purple-400">Are LP fees constant?</h4>
-          <p className="text-muted-foreground/70 text-sm leading-relaxed">
-            Usually, yes (0.3% is standard). Some protocols use <strong>Dynamic Fees</strong> that increase during high volatility or decrease for stablecoin-only pairs.
-          </p>
-        </div>
-
-        <div className="bg-accent/20 border border-border p-6 rounded-2xl hover:bg-accent/40 transition-colors group">
-          <h4 className="text-lg font-bold mb-2 text-purple-400">Can the pool be drained?</h4>
-          <p className="text-muted-foreground/70 text-sm leading-relaxed">
-            {ammType === 'CPMM' && "In CPMM, it is mathematically impossible to empty the pool. As reserves drop, the cost approaches infinity, pricing out all buyers."}
-            {ammType === 'CSMM' && "Yes. CSMM is highly vulnerable. If the market price deviates from 1:1, arbitrageurs will drain the reserve completely."}
-            {ammType === 'StableSwap' && "Essentially no. StableSwap transitions to CPMM behavior if reserves become unbalanced, protecting the final tokens."}
-          </p>
-        </div>
-      </div>
-    </section>
+        {/* Side shadows to indicate scrollability */}
+        <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-slate-50/10 to-transparent pointer-events-none rounded-l-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-slate-50/10 to-transparent pointer-events-none rounded-r-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity" />
+      </section>
+    </div>
   );
 };
+
